@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Al-Biruni</title>
+    <link rel="stylesheet" href="Al-biruni.css">
+    <link rel="icon" href="images/icon.png">
+    <style>
+/* ...existing styles... */
+@media (min-width: 701px) {
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+    }
+    .logo {
+        order: 1;
+        margin-right: auto;
+    }
+    .nav {
+        order: 3;
+    }
+    .auth-buttons {
+        order: 2;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 700px) {
+    header {
+        padding: 10px;
+    }
+    .logo {
+        margin-left: 10px;
+    }
+    .nav li:not(.show-mobile) {
+        display: none;
+    }
+    .auth-buttons {
+        margin: 0 auto;
+    }
+}
+@media (max-width: 430px) {
+    .nav li a, .reg {
+        font-size: 0.9em !important;
+        padding: 7px 7px !important;
+    }
+    .logo {
+        font-size: 1em !important;
+        margin-left: 6px;
+    }
+}
+header {
+    display: flex;
+    justify-content: space-between; /* تغيير هنا */
+    align-items: center;
+    padding: 10px 20px;
+    width: 100%;
+}
+.logo {
+    margin-left: 18px;
+}
+.nav {
+    margin-left: auto; /* إضافة هذا */
+    display: flex;
+    gap: 16px;  /* زيادة المسافة بين العناصر */
+    align-items: center;
+    list-style: none;
+}
+.auth-buttons {
+    margin: 0 20px;  /* إضافة هوامش */
+    display: flex;
+    gap: 8px;
+}
+@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<header>
+    <a href="#Home" class="logo">Al-Biruni</a>
+    <div class="auth-buttons">
+      
+    </div>
+    <ul class="nav">
+        <li><a href="#Home" class="heade">Home</a></li>
+        <li><a href="#AboutUs" class="heade">About Us</a></li>
+        <li><a href="#Programs" class="heade">Programs</a></li>
+        <li><a href="#Contact" class="heade">Contact</a></li>
+        <li><a href="theme2.html" class="nav-link" style="padding: 8px 16px; background: white; color: rgb(23, 30, 126); border-radius: 40px; text-decoration: none; font-weight: 500; box-shadow: 0 2px 8px rgba(56,189,248,0.2);">
+           theme 2
+        </a></li>
+        <li>  <a href="/login" class="reg" style="background-color: #fff; color: rgb(23, 30, 126); border-radius: 40px; padding: 7px 12px; text-decoration: none; font-weight: 750;">Login</a>
+        <a href="/registration" class="reg" style="background-color: rgb(255, 255, 255); color: rgb(23, 30, 126); border-radius: 40px; padding: 7px 12px; text-decoration: none; font-weight: 750;">Register Your Child Now!</a></li>
+    </ul>
+</header>
+
+<body>
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</body>
+
+<section class="H" id="Home">
+        <img src="images/child.png" alt="Child">
+        <h1 class="autoshow" >Al-Biruni Education System</h1>
+        <p class="autoshow"> <br>is a well-organized and outstanding school <br> that offers quality education
+            while <br> nurturing strong Islamic values <br> and character in its students.
+            </p>
+    </section>
+<hr>
+
+
+    <section class="A" id="AboutUs">
+        <img src="images/Qustion.png" alt="Qustion">
+        <h1 class="autoshow">Basic Information:</h1>
+        <p class="autoshow">  <br>
+            <b>Full Name: </b> <br> Al-Biruni Education System
+            <br>
+            <b>Location: </b> <br>Near Askar Fuel Station, Mangal, Abbottabad
+            <br>
+            <b>Website:</b> <br> al-biruni.web.app </p>
+    </section>
+<hr>
+
+
+    <section class="P" id="Programs">
+        <img src="images/programs.png" alt="Programs">
+        <h1 class="autoshow">Academic Programs:</h1>
+        <p class="autoshow">
+            The school offers a variety of programs including:
+            <br>
+            - <b>Primary & Secondary Education: </b>A comprehensive curriculum focused on core subjects.
+            <br>
+            - <b>Islamic Studies: </b> Quran, Hadith, and Fiqh education.
+            <br>
+            - <b>Extracurricular Activities: </b> Sports, arts, and cultural programs to enhance student skills.
+            <br>
+            - <b>Unique programs: </b> Accelerated program for students who are late in school education but they have completed memorizing of Holy Qur'an
+            </p>
+            <h2 class="autoshow">Facilities:</h2>
+            
+            <p class="p2"> 
+               - Spacious classrooms with modern teaching aids
+                <br>
+        
+                - Science and computer labs
+                <br>
+                - Sports fields and a multipurpose hall
+                <br>
+                - A place equipped for lectures and memorizing the Quran and to explain the hadiths and the Sunnah of the Prophet
+            </p>
+    
+    </section>
+<hr>
+
+
+    <section class="C" id="Contact">
+        <img src="images/conact.png" alt="Contact">
+        <h1 class="autoshow"><b>Phone: </b> 0992 339839 , 03115913366</h1>
+        <h2 class="autoshow"><b>Email: </b> info@albiruni.net</h2>
+    </section>
+     <button class="SUF"><a href="https://suf-site.web.app" target="_blank">SUF WEBSITE!</a></button> 
+</body>
+
+<div class="buttons-container" style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+    <a href="theme2.html" class="btn-professional-theme" style="padding: 10px 20px; background: #2563eb; color: white; border-radius: 5px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 8px rgba(37,99,235,0.2);">
+        ثيم احترافي
+    </a>
+</div>
+
+<script>
+  // إظهار فقط زري الدخول والتسجيل على الجوال
+  function updateNavForMobile() {
+    if (window.innerWidth <= 700) {
+      document.querySelectorAll('.nav li').forEach(function(li) {
+        if (li.classList.contains('show-mobile')) {
+          li.style.display = 'inline-block';
+        } else {
+          li.style.display = 'none';
+        }
+      });
+    } else {
+      document.querySelectorAll('.nav li').forEach(function(li) {
+        li.style.display = 'inline-block';
+      });
+    }
+  }
+  window.addEventListener('resize', updateNavForMobile);
+  window.addEventListener('DOMContentLoaded', updateNavForMobile);
+
+  // إخفاء نافذة عيد الأضحى بعد ثلاث ثوانٍ
+  setTimeout(() => {
+    const modal = document.getElementById('eid-mubarak-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }, 3000);
+</script>
+
+<footer>
+    <div class="footer">
+        <p>&copy; 2025 Al-Biruni. All rights reserved.</p>
+        <p>By : Sufyan bin Muhammed</p>
+    </div>
+</footer>
+
+
+</html>

@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard | AL-BIRUNI</title>
+  <link rel="icon" href="images/icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN  -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase App ( -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- أضف مكتبة SheetJS قبل إغلاق </head> -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <style>
+    .access-denied-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .access-denied-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
+      max-width: 90%;
+      width: 400px;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @media (max-width: 640px) {
+      .nav-links { display: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+  <!-- رسالة ترحيب -->
+  <div id="welcome-toast" style="display:none;position:fixed;top:24px;right:24px;z-index:99999;min-width:220px;max-width:90vw;background:#2563eb;color:#fff;padding:18px 28px 18px 18px;border-radius:12px;box-shadow:0 4px 24px #0002;display:flex;align-items:center;gap:14px;font-size:1.1em;font-weight:500;">
+    <svg style="width:28px;height:28px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2" fill="#3b82f6"/>
+      <path stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 13s1.5 2 4 2 4-2 4-2"/>
+      <circle cx="9" cy="10" r="1" fill="#fff"/>
+      <circle cx="15" cy="10" r="1" fill="#fff"/>
+    </svg>
+    <span id="welcome-toast-text"></span>
+  </div>
+  <script>
+     if (!localStorage.getItem('isLoggedIn')) {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f4f6;">
+          <div style="background:white;padding:2.5rem 2rem;border-radius:1.2rem;box-shadow:0 4px 24px #0001;text-align:center;max-width:90vw;">
+            <div style="font-size:2.5rem;color:#ef4444;margin-bottom:1rem;">
+              <i style='font-size:2.5rem;' class='fa fa-ban'></i>
+            </div>
+            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Access Denied</div>
+            <div style="color:#64748b;margin-bottom:1.5rem;">You are not authorized to access this page.<br>Please login first.</div>
+            <a href="/login" style="display:inline-block;background:#2563eb;color:white;padding:0.7rem 2.2rem;border-radius:2rem;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #2563eb22;">Go to Login</a>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { window.location.href = '/'; }, 2200);
+    }
+    // رسالة ترحيب مرة في اليوم
+    document.addEventListener('DOMContentLoaded', function() {
+      var userName = localStorage.getItem('userName') || 'Teacher';
+      var toast = document.getElementById('welcome-toast');
+      var toastText = document.getElementById('welcome-toast-text');
+      var lastShown = localStorage.getItem('welcomeToastLastShown');
+      var now = Date.now();
+      var oneDay = 24 * 60 * 60 * 1000;
+      if (!lastShown || now - parseInt(lastShown, 10) > oneDay) {
+        toastText.textContent = `Welcome, Teacher ${userName}!`;
+        toast.style.display = 'flex';
+        setTimeout(function() {
+          toast.style.display = 'none';
+        }, 3000);
+        localStorage.setItem('welcomeToastLastShown', now.toString());
+      } else {
+        // لا تظهر البطاقة أبداً بعد أول عرض خلال 24 ساعة
+        toast.style.display = 'none';
+      }
+    });
+  </script>
+  <script>
+    // حماية بسيطة (except main page)
+    if (!localStorage.getItem('isLoggedIn')) {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f4f6;">
+          <div style="background:white;padding:2.5rem 2rem;border-radius:1.2rem;box-shadow:0 4px 24px #0001;text-align:center;max-width:90vw;">
+            <div style="font-size:2.5rem;color:#ef4444;margin-bottom:1rem;">
+              <i style='font-size:2.5rem;' class='fa fa-ban'></i>
+            </div>
+            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Access Denied</div>
+            <div style="color:#64748b;margin-bottom:1.5rem;">You are not authorized to access this page.<br>Please login first.</div>
+            <a href="/login" style="display:inline-block;background:#2563eb;color:white;padding:0.7rem 2.2rem;border-radius:2rem;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #2563eb22;">Go to Login</a>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { window.location.href = '/'; }, 2200);
+    }
+
+        function updateOwnLastActive(isOnline = true) {
+      const teacherData = localStorage.getItem('teacherData');
+      if (teacherData) {
+        try {
+          const t = JSON.parse(teacherData);
+          if (t && t.name) {
+            db.collection('teachers')
+              .where('name', '==', t.name)
+              .limit(1)
+              .get()
+              .then(snapshot => {
+                if (!snapshot.empty) {
+                  const docId = snapshot.docs[0].id;
+                  // إذا خرج من الصفحة، اجعل lastActive = 0 (أوفلاين فوري)
+                  db.collection('teachers').doc(docId).update({ lastActive: isOnline ? Date.now() : 0 });
+                }
+              });
+          }
+        } catch {}
+      }
+    }
+    // حدث lastActive عند تحميل الصفحة وكل دقيقة، وعند الخروج من الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+      updateOwnLastActive(true);
+      setInterval(() => updateOwnLastActive(true), 60 * 1000);
+      // عند الخروج أو إغلاق الصفحة، اجعل المعلم أوفلاين فوراً
+      window.addEventListener('beforeunload', function() {
+        updateOwnLastActive(false);
+      });
+      // عند فقدان التركيز (مثلاً غلق التبويب)، اجعل أوفلاين
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+          updateOwnLastActive(false);
+        } else if (document.visibilityState === 'visible') {
+          updateOwnLastActive(true);
+        }
+      });
+    });
+
+  </script>
+  <!-- Header -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-center justify-between h-auto sm:h-16 gap-2 sm:gap-0 py-2 sm:py-0">
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">AL-BIRUNI Admin Dashboard</h1>
+          <!-- زر همبرغر للجوال -->
+          <button id="hamburger-menu" class="sm:hidden ml-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Open menu">
+            <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+        <!-- قائمة الناف بار العادية -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto nav-links">
+          <!-- زر requests يظهر فقط إذا لم يكن الدور nor أو mid -->
+          <a href="/requests" id="requests-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-center">
+            Requests
+          </a>
+          <a href="/attendance" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-bold text-center">
+            Attendance
+          </a>
+          <a href="/suggestions" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition font-bold text-center">
+            Suggestions
+          </a>
+          <a href="/chat" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-bold text-center">
+            Chat
+          </a>
+          <!-- زر تحكم بمراتب الاساتذة للادمن فقط -->
+          <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-bold text-center" style="margin-left:8px;">
+            Logout
+          </button>
+        </div>
+        <!-- قائمة همبرغر للجوال -->
+        <div id="mobile-menu" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-40 z-50 hidden sm:hidden">
+          <div class="bg-white shadow-lg rounded-b-lg p-6 flex flex-col gap-4 absolute top-0 left-0 w-full">
+            <div class="text-xl font-bold text-gray-900 mb-2">AL-BIRUNI Admin Dashboard</div>
+            <button id="close-mobile-menu" class="self-end text-gray-500 hover:text-red-500 text-2xl font-bold">&times;</button>
+            <a href="/requests" id="requests-link-mobile" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-center">Requests</a>
+            <a href="/attendance" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-bold text-center">Attendance & Absence</a>
+            <a href="/suggestions" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition font-bold text-center">Suggestions</a>
+            <a href="/chat" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-bold text-center">Chat</a>
+            <!-- زر تحكم بمراتب الاساتذة للادمن فقط -->
+            <button id="logout-btn-mobile" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-bold text-center">
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <!-- اول بطاقة -->
+    <div class="flex flex-col items-center mb-8">
+      <div class="bg-white rounded-lg shadow p-6 sm:p-8 flex flex-col items-center w-full max-w-xs">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+          </svg>
+        </div>
+        <p class="text-lg font-medium text-gray-500 mb-1">Total Students</p>
+        <p class="text-4xl font-bold text-blue-700" id="stat-total">0</p>
+      </div>
+    </div>
+
+    <!-- اضافة طالب -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Add Student</h2>
+      <form id="add-student-form" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+        <input type="text" id="student-name" placeholder="Student Name" required class="px-3 py-2 border border-gray-300 rounded-lg" />
+        <select id="student-gender" required class="px-3 py-2 border border-gray-300 rounded-lg">
+          <option value="">Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        <input type="text" id="parent-name" placeholder="Parent Name" required class="px-3 py-2 border border-gray-300 rounded-lg" />
+        <input type="text" id="student-phone" placeholder="Phone Number" required class="px-3 py-2 border border-gray-300 rounded-lg" />
+        <input type="email" id="parent-email" placeholder="Parent Email (Gmail only)" pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$" class="px-3 py-2 border border-gray-300 rounded-lg" />
+        <select id="student-grade" required class="px-3 py-2 border border-gray-300 rounded-lg">
+          <option value="">Grade</option>
+          <option value="Nursery">Nursery</option>
+          <option value="Kindergarten">Kindergarten</option>
+          <option value="Prep">Prep</option>
+          <option value="3rd">3rd</option>
+          <option value="4th">4th</option>
+          <option value="5th">5th</option>
+          <option value="6th">6th</option>
+          <option value="7th">7th</option>
+          <option value="8th">8th</option>
+          <option value="9th">9th</option>
+          <option value="10th">10th</option>
+          <option value="1st Year (Girls only)" data-girls="1">1st Year (Girls only)</option>
+          <option value="2nd Year (Girls only)" data-girls="1">2nd Year (Girls only)</option>
+          <option value="Accelerated program">Accelerated program</option>
+        </select>
+        <div class="md:col-span-6 flex justify-center">
+          <button type="submit" class="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 transition font-bold w-full md:w-auto relative">
+            Add
+            <span id="success-message" class="hidden absolute top-1/2 -translate-y-1/2 left-full ml-4 whitespace-nowrap text-green-600 flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              Student added successfully!
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- البحث والفرز -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search by name or email..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+          <select id="grade-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Grades</option>
+            <option value="Nursery">Nursery</option>
+            <option value="Kindergarten">Kindergarten</option>
+            <option value="Prep">Prep</option>
+            <option value="3rd">3rd</option>
+            <option value="4th">4th</option>
+            <option value="5th">5th</option>
+            <option value="6th">6th</option>
+            <option value="7th">7th</option>
+            <option value="8th">8th</option>
+            <option value="9th">9th</option>
+            <option value="10th">10th</option>
+            <option value="1st Year (Girls only)">1st Year (Girls only)</option>
+            <option value="2nd Year (Girls only)">2nd Year (Girls only)</option>
+            <option value="Accelerated program">Accelerated program</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+          <select id="gender-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrations Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="px-2 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <h3 class="text-base sm:text-lg font-medium text-gray-900 flex items-center gap-2 sm:gap-4">
+          Number of Students (<span id="students-count">0</span>)
+        </h3>
+        <button id="download-excel-btn"
+          class="bg-green-600 text-white px-4 sm:px-5 py-2 rounded-lg hover:bg-green-700 font-bold text-sm flex items-center gap-2 shadow transition w-full sm:w-auto"
+          title="Download Students Data" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+          </svg>
+          Download Students Data
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <div style="max-height: 600px; overflow-y: auto;">
+          <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm" id="students-table">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Student</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Parent</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Grade</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="students-tbody">
+              <!-- الطلاب سيضافون هنا -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="student-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+      <h2 class="text-xl font-bold mb-4 text-blue-700">Student Details</h2>
+      <div id="modal-content" class="space-y-2">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+      <div class="text-center">
+        <svg class="w-16 h-16 mx-auto mb-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Delete Student</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to delete this student? This action cannot be undone.</p>
+        <div class="flex justify-center space-x-4">
+          <button id="cancel-delete" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition font-bold">
+            Cancel
+          </button>
+          <button id="confirm-delete" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-bold">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCE-N0QQmjLie60yBSRe7rl6ulfb7YbwqU",
+      authDomain: "al-biruni.firebaseapp.com",
+      projectId: "al-biruni",
+      storageBucket: "al-biruni.appspot.com", // <-- التصحيح هنا
+      messagingSenderId: "77152769570",
+      appId: "1:77152769570:web:83b8de7bd64856d7f51c7b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let students = [];
+    let filteredStudents = [];
+
+    // Load students from Firestore (once, or on snapshot update)
+    async function loadStudents() {
+      try {
+        const snapshot = await db.collection('students').orderBy('date', 'desc').get();
+        students = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        if (students.length === 0) {
+          console.warn('No students found in the database.');
+        }
+
+        renderStudents();
+      } catch (error) {
+        console.error('Error loading students:', error);
+        document.getElementById('students-tbody').innerHTML = `
+          <tr><td colspan="5" class="text-center text-red-500 py-4">
+            Error loading students. Please try again.
+          </td></tr>
+        `;
+      }
+    }
+
+    // Save student to Firestore (add)
+    async function addStudent(student) {
+      try {
+        const docRef = await db.collection('students').add({
+            ...student,
+            date: getPakistanDate()
+        });
+        
+        // إظهار رسالة النجاح
+        const successMessage = document.getElementById('success-message');
+        successMessage.classList.remove('hidden');
+        
+        // إخفاء الرسالة بعد 3 ثواني
+        setTimeout(() => {
+          successMessage.classList.add('hidden');
+        }, 3000);
+        
+        return docRef.id;
+      } catch (error) {
+        console.error("Error adding student:", error);
+        alert('Error adding student. Please try again.');
+      }
+    }
+
+    // Update student in Firestore
+    async function updateStudent(idx, updated) {
+      const id = students[idx].id;
+      await db.collection('students').doc(id).set(updated);
+      students[idx] = { ...updated, id };
+      console.log("Student updated:", updated); // للتأكد من التعديل
+    }
+
+    // Delete student from Firestore
+    async function deleteStudentFirestore(idx) {
+      const id = students[idx].id;
+      await db.collection('students').doc(id).delete();
+      students.splice(idx, 1);
+      console.log("Student deleted:", id); // للتأكد من الحذف
+    }
+
+    function updateStats() {
+      document.getElementById('stat-total').textContent = students.length;
+      document.getElementById('students-count').textContent = filteredStudents.length;
+    }
+
+    function filterStudents() {
+      const search = document.getElementById('search-input').value.trim().toLowerCase();
+      const grade = document.getElementById('grade-filter').value;
+      const gender = document.getElementById('gender-filter').value;
+
+      filteredStudents = students.filter(s => {
+        const matchesSearch =
+          (s.name?.toLowerCase() || '').includes(search) || // التحقق من وجود `name`
+          (s.parent?.toLowerCase() || '').includes(search) || // التحقق من وجود `parent`
+          (s.email?.toLowerCase() || '').includes(search); // التحقق من وجود `email`
+        const matchesGrade = !grade || s.grade === grade;
+        const matchesGender = !gender || s.gender === gender;
+        return matchesSearch && matchesGrade && matchesGender;
+      });
+    }
+
+    // تعديل دالة renderStudents لضمان عرض البيانات بشكل صحيح
+    function renderStudents() {
+      filterStudents();
+      const tbody = document.getElementById('students-tbody');
+      tbody.innerHTML = '';
+
+      if (filteredStudents.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center text-gray-500 py-4">
+              No students found.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filteredStudents.forEach((s, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-50";
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div>
+              <div class="text-sm font-medium text-gray-900">${s.name || 'Unknown Name'}</div>
+              <div class="text-sm text-gray-500">${s.gender || 'Unknown Gender'}</div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div>
+              <div class="text-sm font-medium text-gray-900">${s.parent || 'Unknown Parent'}</div>
+              <div class="text-sm text-gray-500">${s.phone || 'Unknown Phone'}</div>
+              <div class="text-sm text-gray-500">${s.email || 'Unknown Email'}</div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="text-sm text-gray-900">${s.grade || 'Unknown Grade'}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            ${s.date || 'Unknown Date'}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold" onclick="showModal(${students.indexOf(s)})">View</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      updateStats();
+    }
+
+    // Modal logic
+    function showModal(idx) {
+      const s = students[idx];
+      const modal = document.getElementById('student-modal');
+      const content = document.getElementById('modal-content');
+      // عرض المعلومات (عرض فقط)
+      const userRole = localStorage.getItem('userRole');
+      let actionsHtml = '';
+      if (userRole !== 'nor' && userRole !== null) { // allow both adi and mid to edit, only adi can delete
+        actionsHtml = `
+          <button onclick="editStudent(${idx})" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition font-bold">Edit</button>
+          ${userRole === 'adi' ? `<button onclick="deleteStudent(${idx})" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-bold">Delete</button>` : ''}
+        `;
+      }
+      content.innerHTML = `
+        <div id="student-view-fields">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Student Information</h3>
+              <div><span class="font-semibold">Name:</span> ${s.name || ""}</div>
+              <div><span class="font-semibold">Gender:</span> ${s.gender || ""}</div>
+              <div><span class="font-semibold">Grade:</span> ${s.grade || ""}</div>
+              <div><span class="font-semibold">DOB:</span> ${s.dob || ""}</div>
+              <div><span class="font-semibold">Previous School:</span> ${s.previousSchool || ""}</div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Parent Information</h3>
+              <div><span class="font-semibold">Name:</span> ${s.parent || ""}</div>
+              <div><span class="font-semibold">Phone:</span> ${s.phone || ""}</div>
+              <div><span class="font-semibold">Email:</span> ${s.email || ""}</div>
+              <div><span class="font-semibold">Relationship:</span> ${s.relationship || ""}</div>
+              <div><span class="font-semibold">Occupation:</span> ${s.occupation || ""}</div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Contact Information</h3>
+              <div><span class="font-semibold">Address:</span> ${s.address || ""}</div>
+              <div><span class="font-semibold">City:</span> ${s.city || ""}</div>
+              <div><span class="font-semibold">State:</span> ${s.state || ""}</div>
+              <div><span class="font-semibold">Postal Code:</span> ${s.postalCode || ""}</div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Emergency Contact</h3>
+              <div><span class="font-semibold">Name:</span> ${(s.emergencyContact && s.emergencyContact.name) || ""}</div>
+              <div><span class="font-semibold">Phone:</span> ${(s.emergencyContact && s.emergencyContact.phone) || ""}</div>
+              <div><span class="font-semibold">Relationship:</span> ${(s.emergencyContact && s.emergencyContact.relationship) || ""}</div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Medical Information</h3>
+              <div><span class="font-semibold">Conditions:</span> ${(s.medicalInfo && s.medicalInfo.conditions) || ""}</div>
+              <div><span class="font-semibold">Allergies:</span> ${(s.medicalInfo && s.medicalInfo.allergies) || ""}</div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Additional Notes</h3>
+              <div>${s.additionalNotes || ""}</div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Date</h3>
+              <div>${s.date || ""}</div>
+            </div>
+          </div>
+          <div class="pt-4 flex justify-end space-x-2">
+            ${actionsHtml}
+          </div>
+        </div>
+        <form id="student-edit-form" class="space-y-2 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Student Information</h3>
+              <div>
+                <label class="font-semibold">Name:</label>
+                <input type="text" id="edit-name" class="border rounded px-2 py-1 w-full" value="${s.name || ""}" required>
+              </div>
+              <div>
+                <label class="font-semibold">Gender:</label>
+                <select id="edit-gender" class="border rounded px-2 py-1 w-full" required>
+                  <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>Male</option>
+                  <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>Female</option>
+                </select>
+              </div>
+              <div>
+                <label class="font-semibold">Grade:</label>
+                <select id="edit-grade" class="border rounded px-2 py-1 w-full" required>
+                  <option value="Nursery" ${s.grade === 'Nursery' ? 'selected' : ''}>Nursery</option>
+                  <option value="Kindergarten" ${s.grade === 'Kindergarten' ? 'selected' : ''}>Kindergarten</option>
+                  <option value="Prep" ${s.grade === 'Prep' ? 'selected' : ''}>Prep</option>
+                  <option value="3rd" ${s.grade === '3rd' ? 'selected' : ''}>3rd</option>
+                  <option value="4th" ${s.grade === '4th' ? 'selected' : ''}>4th</option>
+                  <option value="5th" ${s.grade === '5th' ? 'selected' : ''}>5th</option>
+                  <option value="6th" ${s.grade === '6th' ? 'selected' : ''}>6th</option>
+                  <option value="7th" ${s.grade === '7th' ? 'selected' : ''}>7th</option>
+                  <option value="8th" ${s.grade === '8th' ? 'selected' : ''}>8th</option>
+                  <option value="9th" ${s.grade === '9th' ? 'selected' : ''}>9th</option>
+                  <option value="10th" ${s.grade === '10th' ? 'selected' : ''}>10th</option>
+                  <option value="1st Year (Girls only)" data-girls="1" ${s.grade === '1st Year (Girls only)' ? 'selected' : ''}>1st Year (Girls only)</option>
+                  <option value="2nd Year (Girls only)" data-girls="1" ${s.grade === '2nd Year (Girls only)' ? 'selected' : ''}>2nd Year (Girls only)</option>
+                  <option value="Accelerated program" ${s.grade === 'Accelerated program' ? 'selected' : ''}>Accelerated program</option>
+                </select>
+              </div>
+              <div>
+                <label class="font-semibold">DOB:</label>
+                <input type="text" id="edit-dob" class="border rounded px-2 py-1 w-full" value="${s.dob || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">Previous School:</label>
+                <input type="text" id="edit-previousSchool" class="border rounded px-2 py-1 w-full" value="${s.previousSchool || ""}">
+              </div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Parent Information</h3>
+              <div>
+                <label class="font-semibold">Name:</label>
+                <input type="text" id="edit-parent" class="border rounded px-2 py-1 w-full" value="${s.parent || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">Phone:</label>
+                <input type="text" id="edit-phone" class="border rounded px-2 py-1 w-full" value="${s.phone || ""}" pattern="^03[0-9]{9}$" maxlength="11" required>
+              </div>
+              <div>
+                <label class="font-semibold">Email:</label>
+                <input type="email" id="edit-email" class="border rounded px-2 py-1 w-full" value="${s.email || ""}" pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$">
+              </div>
+              <div>
+                <label class="font-semibold">Relationship:</label>
+                <select id="edit-relationship" class="border rounded px-2 py-1 w-full">
+                  <option value="father" ${s.relationship === 'father' ? 'selected' : ''}>(Father)</option>
+                  <option value="mother" ${s.relationship === 'mother' ? 'selected' : ''}>(Mother)</option>
+                  <option value="brother" ${s.relationship === 'brother' ? 'selected' : ''}>(Brother)</option>
+                  <option value="sister" ${s.relationship === 'sister' ? 'selected' : ''}>(Sister)</option>
+                  <option value="uncle" ${s.relationship === 'uncle' ? 'selected' : ''}>(Uncle - Paternal)</option>
+                  <option value="aunt" ${s.relationship === 'aunt' ? 'selected' : ''}>(Aunt - Paternal)</option>
+                  <option value="maternal-uncle" ${s.relationship === 'maternal-uncle' ? 'selected' : ''}>(Uncle - Maternal)</option>
+                  <option value="maternal-aunt" ${s.relationship === 'maternal-aunt' ? 'selected' : ''}>(Aunt - Maternal)</option>
+                  <option value="grandfather" ${s.relationship === 'grandfather' ? 'selected' : ''}>(Grandfather)</option>
+                  <option value="grandmother" ${s.relationship === 'grandmother' ? 'selected' : ''}>(Grandmother)</option>
+                </select>
+              </div>
+              <div>
+                <label class="font-semibold">Occupation:</label>
+                <input type="text" id="edit-occupation" class="border rounded px-2 py-1 w-full" value="${s.occupation || ""}">
+              </div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Contact Information</h3>
+              <div>
+                <label class="font-semibold">Address:</label>
+                <input type="text" id="edit-address" class="border rounded px-2 py-1 w-full" value="${s.address || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">City:</label>
+                <input type="text" id="edit-city" class="border rounded px-2 py-1 w-full" value="${s.city || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">State:</label>
+                <input type="text" id="edit-state" class="border rounded px-2 py-1 w-full" value="${s.state || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">Postal Code:</label>
+                <input type="text" id="edit-postalCode" class="border rounded px-2 py-1 w-full" value="${s.postalCode || ""}">
+              </div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Emergency Contact</h3>
+              <div>
+                <label class="font-semibold">Name:</label>
+                <input type="text" id="edit-emergencyName" class="border rounded px-2 py-1 w-full" value="${(s.emergencyContact && s.emergencyContact.name) || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">Phone:</label>
+                <input type="text" id="edit-emergencyPhone" class="border rounded px-2 py-1 w-full" value="${(s.emergencyContact && s.emergencyContact.phone) || ""}" pattern="^03[0-9]{9}$" maxlength="11">
+              </div>
+              <div>
+                <label class="font-semibold">Relationship:</label>
+                <select id="edit-emergencyRelationship" class="border rounded px-2 py-1 w-full">
+                  <option value="father" ${(s.emergencyContact && s.emergencyContact.relationship === 'father') ? 'selected' : ''}>(Father)</option>
+                  <option value="mother" ${(s.emergencyContact && s.emergencyContact.relationship === 'mother') ? 'selected' : ''}>(Mother)</option>
+                  <option value="brother" ${(s.emergencyContact && s.emergencyContact.relationship === 'brother') ? 'selected' : ''}>(Brother)</option>
+                  <option value="sister" ${(s.emergencyContact && s.emergencyContact.relationship === 'sister') ? 'selected' : ''}>(Sister)</option>
+                  <option value="uncle" ${(s.emergencyContact && s.emergencyContact.relationship === 'uncle') ? 'selected' : ''}>(Uncle - Paternal)</option>
+                  <option value="aunt" ${(s.emergencyContact && s.emergencyContact.relationship === 'aunt') ? 'selected' : ''}>(Aunt - Paternal)</option>
+                  <option value="maternal-uncle" ${(s.emergencyContact && s.emergencyContact.relationship === 'maternal-uncle') ? 'selected' : ''}>(Uncle - Maternal)</option>
+                  <option value="maternal-aunt" ${(s.emergencyContact && s.emergencyContact.relationship === 'maternal-aunt') ? 'selected' : ''}>(Aunt - Maternal)</option>
+                  <option value="grandfather" ${(s.emergencyContact && s.emergencyContact.relationship === 'grandfather') ? 'selected' : ''}>(Grandfather)</option>
+                  <option value="grandmother" ${(s.emergencyContact && s.emergencyContact.relationship === 'grandmother') ? 'selected' : ''}>(Grandmother)</option>
+                </select>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Medical Information</h3>
+              <div>
+                <label class="font-semibold">Conditions:</label>
+                <input type="text" id="edit-medicalConditions" class="border rounded px-2 py-1 w-full" value="${(s.medicalInfo && s.medicalInfo.conditions) || ""}">
+              </div>
+              <div>
+                <label class="font-semibold">Allergies:</label>
+                <input type="text" id="edit-medicalAllergies" class="border rounded px-2 py-1 w-full" value="${(s.medicalInfo && s.medicalInfo.allergies) || ""}">
+              </div>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Additional Notes</h3>
+              <textarea id="edit-additionalNotes" class="border rounded px-2 py-1 w-full">${s.additionalNotes || ""}</textarea>
+            </div>
+            <div class="space-y-3">
+              <h3 class="font-bold text-blue-600 border-b pb-2">Date</h3>
+              <input type="date" id="edit-date" class="border rounded px-2 py-1 w-full" value="${s.date ? s.date : ''}">
+            </div>
+          </div>
+          <div class="pt-4 flex justify-end space-x-2">
+            <button type="button" onclick="cancelEdit()" class="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition font-bold">Cancel</button>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold">Save</button>
+          </div>
+        </form>
+      `;
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        const editForm = document.getElementById('student-edit-form');
+        if (editForm) {
+          editForm.onsubmit = function(ev) {
+            ev.preventDefault();
+            saveEdit(idx);
+          };
+        }
+      }, 0);
+    }
+
+    // Show edit form
+    function editStudent(idx) {
+      document.getElementById('student-view-fields').style.display = 'none';
+      document.getElementById('student-edit-form').classList.remove('hidden');
+    }
+
+    // Cancel edit
+    function cancelEdit() {
+      document.getElementById('student-edit-form').classList.add('hidden');
+      document.getElementById('student-view-fields').style.display = '';
+    }
+
+    // Save edit
+    async function saveEdit(idx) {
+      const email = document.getElementById('edit-email').value.trim();
+      if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) {
+        alert('Parent Email must be a valid Gmail address.');
+        document.getElementById('edit-email').focus();
+        return;
+      }
+      // تحقق من صحة رقم الهاتف الباكستاني
+      const phone = document.getElementById('edit-phone').value.trim();
+      if (!/^03[0-9]{9}$/.test(phone)) {
+        alert('Phone number must be a valid Pakistani number (e.g. 03XXXXXXXXX)');
+        document.getElementById('edit-phone').focus();
+        return;
+      }
+      // تحقق من صحة رقم الطوارئ إذا أدخل
+      const emergencyPhone = document.getElementById('edit-emergencyPhone').value.trim();
+      if (emergencyPhone && !/^03[0-9]{9}$/.test(emergencyPhone)) {
+        alert('Emergency phone must be a valid Pakistani number (e.g. 03XXXXXXXXX)');
+        document.getElementById('edit-emergencyPhone').focus();
+        return;
+      }
+      // تحقق من صحة التاريخ
+      const date = document.getElementById('edit-date').value;
+      if (!date) {
+        alert('Please select a date.');
+        document.getElementById('edit-date').focus();
+        return;
+      }
+      try {
+        const saveButton = document.querySelector('#student-edit-form button[type="submit"]');
+        const originalText = saveButton.innerHTML;
+        saveButton.innerHTML = `
+          <div class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Saving...
+          </div>
+        `;
+        // حفظ جميع الحقول
+        const updated = {
+          name: document.getElementById('edit-name').value.trim(),
+          gender: document.getElementById('edit-gender').value,
+          phone: phone,
+          parent: document.getElementById('edit-parent').value.trim(),
+          email: email,
+          grade: document.getElementById('edit-grade').value,
+          dob: document.getElementById('edit-dob').value.trim(),
+          previousSchool: document.getElementById('edit-previousSchool').value.trim(),
+          relationship: document.getElementById('edit-relationship').value,
+          occupation: document.getElementById('edit-occupation').value.trim(),
+          address: document.getElementById('edit-address').value.trim(),
+          city: document.getElementById('edit-city').value.trim(),
+          state: document.getElementById('edit-state').value.trim(),
+          postalCode: document.getElementById('edit-postalCode').value.trim(),
+          emergencyContact: {
+            name: document.getElementById('edit-emergencyName').value.trim(),
+            phone: document.getElementById('edit-emergencyPhone').value.trim(),
+            relationship: document.getElementById('edit-emergencyRelationship').value
+          },
+          medicalInfo: {
+            conditions: document.getElementById('edit-medicalConditions').value.trim(),
+            allergies: document.getElementById('edit-medicalAllergies').value.trim()
+          },
+          additionalNotes: document.getElementById('edit-additionalNotes').value.trim(),
+          date: date
+        };
+        await updateStudent(idx, updated);
+        saveButton.innerHTML = `
+          <span class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            Saved Successfully!
+          </span>
+        `;
+        saveButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        saveButton.classList.add('bg-green-600', 'hover:bg-green-700');
+        setTimeout(async () => {
+          await refreshAndRender();
+          closeModal();
+        }, 2000);
+      } catch (error) {
+        console.error('Error updating student:', error);
+        alert('Failed to update student information.');
+      }
+    }
+
+    async function deleteStudent(idx) {
+      const deleteModal = document.getElementById('delete-confirm-modal');
+      const confirmBtn = document.getElementById('confirm-delete');
+      const cancelBtn = document.getElementById('cancel-delete');
+      
+      deleteModal.classList.remove('hidden');
+      
+      return new Promise((resolve) => {
+        confirmBtn.onclick = async () => {
+          try {
+            // تغيير شكل زر الحذف ليظهر حالة التحميل
+            confirmBtn.innerHTML = `
+              <div class="flex items-center">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Deleting...
+              </div>
+            `;
+            
+            // حذف الطالب
+            await deleteStudentFirestore(idx);
+            
+            // عرض رسالة النجاح
+            confirmBtn.innerHTML = `
+              <span class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+                Deleted Successfully!
+              </span>
+            `;
+            confirmBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+            confirmBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            
+            // إغلاق المودال وتحديث القائمة بعد 1.5 ثانية
+            setTimeout(async () => {
+              deleteModal.classList.add('hidden');
+              closeModal();
+              await refreshAndRender(); // تحديث القائمة
+              
+              // إعادة تعيين الزر لحالته الأصلية
+              setTimeout(() => {
+                confirmBtn.innerHTML = 'Delete';
+                confirmBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                confirmBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+              }, 500);
+            }, 1500);
+
+          } catch (error) {
+            console.error('Error deleting student:', error);
+            alert('Failed to delete student. Please try again.');
+            deleteModal.classList.add('hidden');
+          }
+        };
+        
+        cancelBtn.onclick = () => {
+          deleteModal.classList.add('hidden');
+          resolve(false);
+        };
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('student-modal').classList.add('hidden');
+    }
+
+    document.getElementById('add-student-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // جمع بيانات النموذج
+      const student = {
+        name: document.getElementById('student-name').value.trim(),
+        gender: document.getElementById('student-gender').value,
+        parent: document.getElementById('parent-name').value.trim(),
+        phone: document.getElementById('student-phone').value.trim(),
+        email: document.getElementById('parent-email').value.trim(),
+        grade: document.getElementById('student-grade').value
+      };
+
+      // التحقق من البيانات
+      if (!student.name || !student.gender || !student.parent || !student.phone || !student.email || !student.grade) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      // التحقق من صحة البريد الإلكتروني
+      if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(student.email)) {
+        alert('Parent Email must be a valid Gmail address');
+        document.getElementById('parent-email').focus();
+        return;
+      }
+
+      // إضافة الطالب
+      const id = await addStudent(student);
+      if (id) {
+        this.reset(); // مسح النموذج
+        await refreshAndRender(); // تحديث القائمة
+      }
+    });
+
+    document.getElementById('search-input').addEventListener('input', renderStudents);
+    document.getElementById('grade-filter').addEventListener('change', renderStudents);
+    document.getElementById('gender-filter').addEventListener('change', renderStudents);
+
+    async function refreshAndRender() {
+      // لا تعيد تحميل الطلاب إذا كانوا محملين بالفعل إلا إذا كان هناك تغيير
+      if (students.length === 0) {
+        await loadStudents();
+      }
+      renderStudents();
+    }
+
+    // Initial load and render
+    (async function() {
+      await loadStudents();
+      renderStudents();
+    })();
+
+    // Real-time updates (اختياري)
+    db.collection('students').onSnapshot(async () => {
+      await loadStudents();
+      renderStudents();
+    });
+
+    // Expose for modal buttons
+    window.showModal = showModal;
+    window.editStudent = editStudent;
+    window.deleteStudent = deleteStudent;
+    window.cancelEdit = cancelEdit;
+
+    // احرص أن يكون هذا الكود فقط في adb.html وليس في attendance.html
+    const studentGenderEl = document.getElementById('student-gender');
+    if (studentGenderEl) {
+      studentGenderEl.addEventListener('change', function() {
+        const isMale = this.value === 'Male';
+        const gradeSelect = document.getElementById('student-grade');
+        Array.from(gradeSelect.options).forEach(opt => {
+          if (opt.dataset.girls === "1") {
+            opt.disabled = isMale;
+            if (isMale && gradeSelect.value === opt.value) {
+              gradeSelect.value = "";
+            }
+          }
+        });
+      });
+    }
+
+    // دعم نفس المنطق في نموذج التعديل داخل المودال
+    function handleEditGenderChange() {
+      const editGender = document.getElementById('edit-gender');
+      const editGrade = document.getElementById('edit-grade');
+      if (!editGender || !editGrade) return;
+      const isMale = editGender.value === 'Male';
+      Array.from(editGrade.options).forEach(opt => {
+        if (opt.dataset.girls === "1") {
+          opt.disabled = isMale;
+          if (isMale && editGrade.value === opt.value) {
+            editGrade.value = "";
+          }
+        }
+      });
+    }
+    document.addEventListener('change', function(e) {
+      if (e.target && e.target.id === 'edit-gender') {
+        handleEditGenderChange();
+      }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+      handleEditGenderChange();
+    });
+
+    // تحديث دالة getPakistanDate للحصول على التاريخ بالشكل الصحيح
+    function getPakistanDate() {
+        const now = new Date();
+        now.setHours(now.getHours() + 5); // Pakistan timezone offset
+        return now.toISOString().split('T')[0];
+    }
+
+    // وظيفة تسجيل الخروج
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = '/login';
+    }
+
+    // دالة تصدير الطلاب إلى ملف Excel
+    function exportStudentsToExcel() {
+      // ترتيب الأعمدة بشكل أنيق
+      const data = filteredStudents.map(s => ({
+        "Student Name": s.name || "",
+        "Gender": s.gender || "",
+        "Parent Name": s.parent || "",
+        "Phone Number": s.phone || "",
+        "Parent Email": s.email || "",
+        "Grade": s.grade || "",
+        "Date": s.date || ""
+      }));
+
+      // إنشاء ورقة العمل
+      const ws = XLSX.utils.json_to_sheet(data, {header: [
+        "Student Name", "Gender", "Parent Name", "Phone Number", "Parent Email", "Grade", "Date"
+      ]});
+      // إضافة أنماط بسيطة (عناوين عريضة)
+      const wscols = [
+        {wch: 22}, {wch: 10}, {wch: 22}, {wch: 16}, {wch: 28}, {wch: 18}, {wch: 14}
+      ];
+      ws['!cols'] = wscols;
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range(ws['!ref']) };
+
+      // إنشاء ملف العمل
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Students");
+
+      // تصدير الملف
+      XLSX.writeFile(wb, "students-list.xlsx");
+    }
+
+    // اجعل filteredStudents متاحاً عالمياً
+    window.filteredStudents = filteredStudents;
+
+    // تأكد من تعريف الدالة مرة واحدة فقط
+    function exportStudentsToExcel() {
+      // استخدم always أحدث نسخة من filteredStudents
+      const data = (typeof filteredStudents !== "undefined" && filteredStudents.length > 0 ? filteredStudents : students).map(s => ({
+        "Student Name": s.name || "",
+        "Gender": s.gender || "",
+        "Parent Name": s.parent || "",
+        "Phone Number": s.phone || "",
+        "Parent Email": s.email || "",
+        "Grade": s.grade || "",
+        "Date": s.date || ""
+      }));
+
+      if (!data.length) {
+        alert("No students to export.");
+        return;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(data, {header: [
+        "Student Name", "Gender", "Parent Name", "Phone Number", "Parent Email", "Grade", "Date"
+      ]});
+      const wscols = [
+        {wch: 22}, {wch: 10}, {wch: 22}, {wch: 16}, {wch: 28}, {wch: 18}, {wch: 14}
+      ];
+      ws['!cols'] = wscols;
+
+      // تحقق من وجود ws['!ref'] قبل إضافة autofilter
+      if (ws['!ref']) {
+        ws['!autofilter'] = { ref: ws['!ref'] };
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Students");
+      XLSX.writeFile(wb, "students-list.xlsx");
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('download-excel-btn');
+      if (btn) btn.onclick = exportStudentsToExcel;
+    });
+
+
+    // صلاحيات المستخدم
+    const userRole = localStorage.getItem('userRole');
+    // إخفاء أو تعطيل أزرار الحذف والتعديل حسب الصلاحية
+    function applyRolePermissions() {
+      if (userRole === 'nor') {
+        // إخفاء أزرار الحذف والتعديل في الجدول والمودال
+        const style = document.createElement('style');
+        style.innerHTML = `
+          button[onclick^="deleteStudent"],
+          button[onclick^="editStudent"] {
+            display: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+        // إخفاء نموذج إضافة الطلاب بالكامل
+        const addForm = document.getElementById('add-student-form');
+        if (addForm) addForm.parentElement.style.display = 'none';
+      }
+      // إخفاء زر requests لnor وmid (ديسكتوب وموبايل)
+      if (userRole === 'nor' || userRole === 'mid') {
+        var reqLink = document.getElementById('requests-link');
+        if (reqLink) reqLink.style.display = 'none';
+        var reqLinkMobile = document.getElementById('requests-link-mobile');
+        if (reqLinkMobile) reqLinkMobile.style.display = 'none';
+      }
+      // mid: يمكنه الحذف والإضافة، لكن لا يخفي الأزرار
+      // adi: كل شيء متاح
+    }
+    document.addEventListener('DOMContentLoaded', applyRolePermissions);
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (userRole === 'nor') {
+        // إخفاء قسم إضافة الطلاب بالكامل (العنوان والنموذج)
+        var addStudentSection = document.querySelector('div.bg-white.rounded-lg.shadow.p-6.mb-8');
+        if (addStudentSection) addStudentSection.style.display = 'none';
+      }
+    });
+
+    // كود فتح/إغلاق قائمة همبرغر
+    document.addEventListener('DOMContentLoaded', function() {
+      var hamburger = document.getElementById('hamburger-menu');
+      var mobileMenu = document.getElementById('mobile-menu');
+      var closeBtn = document.getElementById('close-mobile-menu');
+      if (hamburger && mobileMenu && closeBtn) {
+        hamburger.addEventListener('click', function() {
+          mobileMenu.classList.remove('hidden');
+        });
+        closeBtn.addEventListener('click', function() {
+          mobileMenu.classList.add('hidden');
+        });
+        // إغلاق القائمة عند الضغط خارجها
+        mobileMenu.addEventListener('click', function(e) {
+          if (e.target === mobileMenu) mobileMenu.classList.add('hidden');
+        });
+      }
+    });
+
+    // Show TRC button only for adi
+    document.addEventListener('DOMContentLoaded', function() {
+      var userRole = localStorage.getItem('userRole');
+      // Desktop nav
+      if (userRole === 'adi') {
+        var navLinks = document.querySelector('.nav-links');
+        if (navLinks) {
+          var trcBtn = document.createElement('a');
+          trcBtn.href = "/teachers-ranks";
+          trcBtn.className = "bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-bold text-center";
+          trcBtn.textContent = "TRC";
+          navLinks.insertBefore(trcBtn, document.getElementById('logout-btn'));
+        }
+      }
+      // Mobile nav
+      var mobileMenu = document.getElementById('mobile-menu');
+      if (userRole === 'adi' && mobileMenu) {
+        var trcBtnMobile = document.createElement('a');
+        trcBtnMobile.href = "/teachers-ranks";
+        trcBtnMobile.className = "bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-bold text-center";
+        trcBtnMobile.textContent = "TRC";
+        // Insert before logout button in mobile menu
+        var logoutBtnMobile = document.getElementById('logout-btn-mobile');
+        if (logoutBtnMobile) {
+          logoutBtnMobile.parentNode.insertBefore(trcBtnMobile, logoutBtnMobile);
+        }
+      }
+      // Logout button logic (desktop)
+      var logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.onclick = function() {
+          localStorage.clear();
+          window.location.href = "/login";
+        };
+      }
+      // Logout button logic (mobile)
+      var logoutBtnMobile = document.getElementById('logout-btn-mobile');
+      if (logoutBtnMobile) {
+        logoutBtnMobile.onclick = function() {
+          localStorage.clear();
+          window.location.href = "/login";
+        };
+      }
+    });
+  </script>
+</body>
+</html>

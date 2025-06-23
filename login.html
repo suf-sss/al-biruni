@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | AL-BIRUNI</title>
+    <link rel="icon" href="images/icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .login-container {
+            background: rgba(255,255,255,0.95);
+            max-width: 370px;
+            margin: 48px auto 0 auto;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(60,64,67,.18), 0 1.5px 8px rgba(33,150,243,0.08);
+            padding: 38px 28px 28px 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-container::before {
+            content: "";
+            position: absolute;
+            top: -60px; left: -60px;
+            width: 160px; height: 160px;
+            background: linear-gradient(135deg, #6366f1 60%, #38bdf8 100%);
+            opacity: 0.13;
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .login-header img {
+            width: 68px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 8px #6366f1aa);
+        }
+        .login-title {
+            color: #2563eb;
+            font-weight: 700;
+            font-size: 1.35em;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .login-desc {
+            color: #64748b;
+            font-size: 15px;
+            margin-bottom: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 500;
+            color: #334155;
+            letter-spacing: 0.1px;
+        }
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 38px;
+            color: #a5b4fc;
+            font-size: 18px;
+            pointer-events: none;
+        }
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 13px 14px 13px 38px;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 7px;
+            font-size: 16px;
+            background: #f1f5f9;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus {
+            border-color: #6366f1;
+            background: #fff;
+            box-shadow: 0 0 0 2px #dbeafe;
+        }
+        .login-btn {
+            background: linear-gradient(90deg, #6366f1 60%, #38bdf8 100%);
+            color: white;
+            padding: 14px 0;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.09);
+            letter-spacing: 0.5px;
+        }
+        .login-btn:hover, .login-btn:focus {
+            background: linear-gradient(90deg, #2563eb 60%, #0ea5e9 100%);
+            box-shadow: 0 4px 16px rgba(99,102,241,0.16);
+            transform: translateY(-2px) scale(1.01);
+        }
+        .login-footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 32px;
+            letter-spacing: 0.2px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: #2563eb;
+            background: #fff;
+            border: 2px solid #6366f1;
+            border-radius: 30px;
+            padding: 8px 24px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 4px #e0e7ff44;
+        }
+        .back-link:hover {
+            background: #6366f1;
+            color: #fff;
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px #6366f1aa;
+        }
+        .error-message {
+            color: #d93025;
+            font-size: 14px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .login-container {
+                max-width: 98vw;
+                margin: 18px 1vw 0 1vw;
+                padding: 18px 6px 14px 6px;
+            }
+            .login-header img {
+                width: 52px;
+            }
+            .login-title {
+                font-size: 1.08em;
+            }
+            .login-btn {
+                font-size: 15px;
+                padding: 11px 0;
+            }
+            .back-link {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            .login-footer {
+                font-size: 12px;
+            }
+        }
+        /* تأثير لجذب الانتباه على زر ريجيستر */
+        .attention {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                background-color: #6366f1;
+                color: white;
+                transform: scale(1);
+            }
+            50% {
+                background-color: #38bdf8;
+                color: #fff;
+                transform: scale(1.1);
+            }
+            100% {
+                background-color: #6366f1;
+                color: white;
+                transform: scale(1);
+            }
+        }
+    </style>
+    <!-- أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <img src="images/icon.png" alt="Al-Biruni Logo">
+            <div class="login-title">Al-Biruni Login</div>
+            <div class="login-desc">Welcome Teacher, please enter your username and password.</div>
+        </div>
+        <form id="loginForm" autocomplete="off">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <span class="input-icon"><i class="fa fa-user"></i></span>
+                <input type="text" id="username" name="username" required placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <span class="input-icon"><i class="fa fa-lock"></i></span>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            <div class="error-message" id="loginError">Invalid username or password.</div>
+            <button type="submit" class="login-btn">
+                <i class="fa fa-arrow-right-to-bracket" style="margin-right:8px"></i>
+                Login
+            </button>
+            <!-- إضافة مسافة بين زر لوجن والروابط -->
+            <div style="height: 18px;"></div>
+        </form>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="https://al-biruni.web.app/" class="back-link">&#8592; Back to main page</a>
+            <a href="/register" class="back-link">
+                Register <span style="margin-left:6px;"><i class="fa fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+    <div class="login-footer">
+        &copy; 2025 Al-Biruni. All rights reserved.
+    </div>
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCE-N0QQmjLie60yBSRe7rl6ulfb7YbwqU",
+          authDomain: "al-biruni.firebaseapp.com",
+          projectId: "al-biruni",
+          storageBucket: "al-biruni.appspot.com",
+          messagingSenderId: "77152769570",
+          appId: "1:77152769570:web:83b8de7bd64856d7f51c7b"
+        };
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+
+            // تحقق من الأكواد السرية
+            const secretCodes = ['nor', 'mid', 'adi'];
+            if (secretCodes.includes(password)) {
+                localStorage.setItem('userRole', password); // nor/mid/adi
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userName', username);
+                // حفظ بيانات المستخدم الافتراضية
+                localStorage.setItem('teacherData', JSON.stringify({
+                  name: username,
+                  role: password
+                }));
+                window.location.href = "/admin";
+                return;
+            }
+
+            try {
+                let snapshot = await db.collection('teachers')
+                    .where('name', '==', username)
+                    .where('password', '==', password)
+                    .get();
+
+                if (snapshot.empty) {
+                    snapshot = await db.collection('teachers')
+                        .where('phone', '==', username)
+                        .where('password', '==', password)
+                        .get();
+                }
+
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0].data();
+                    // حفظ جميع بيانات المعلم في localStorage
+                    localStorage.setItem('teacherData', JSON.stringify(doc));
+                    localStorage.setItem('userName', doc.name || '');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    if (doc.role) {
+                        localStorage.setItem('userRole', doc.role);
+                    }
+                    // حفظ كل الحقول بشكل منفصل أيضاً (اختياري)
+                    Object.keys(doc).forEach(key => {
+                        localStorage.setItem(key, typeof doc[key] === 'object' ? JSON.stringify(doc[key]) : doc[key]);
+                    });
+                    window.location.href = "/admin";
+                    return;
+                } else {
+                    errorDiv.textContent = "Username or password is incorrect.";
+                    errorDiv.style.display = 'block';
+                }
+            } catch {
+                errorDiv.textContent = "Username or password is incorrect.";
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

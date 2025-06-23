@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Biruni Education System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="images/icon.png">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E3A8A',
+                        secondary: '#B45309',
+                        accent: '#991B1B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        'arabic': ['Amiri', 'serif'],
+                        'primary': ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .arabic-text {
+            direction: rtl;
+            font-family: 'Amiri', serif;
+            line-height: 2;
+        }
+        .section-divider {
+            background: linear-gradient(90deg, transparent, #3B7D72 50%, transparent);
+            height: 2px;
+        }
+        .shadow-soft {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .feature-item::before {
+            content: "";
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            background: #B19D6A;
+            border-radius: 50%;
+        }
+        .mobile-menu {
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+            display: none;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .mobile-menu.active {
+            transform: translateY(0);
+            display: block;
+        }
+        .hero-overlay {
+            background: linear-gradient(45deg, rgba(30, 58, 138, 0.9) 0%, rgba(180, 83, 9, 0.8) 100%);
+        }
+        .mobile-buttons {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+        }
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(150%);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000;
+        }
+
+        .success-message.show {
+            transform: translateX(0);
+        }
+
+        .success-icon {
+            animation: success-icon-animation 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes success-icon-animation {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+    <!-- إضافة مكتبات Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="font-primary bg-light text-gray-800">
+    <!-- Header -->
+    <header class="fixed w-full top-0 z-50 bg-white shadow-md">
+        <div class="container mx-auto px-6 flex justify-between items-center py-4">
+            <div class="flex items-center space-x-2">
+                <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center">
+                    <i ><img src="images/icon.png" class="w-10 h-10"></i>
+                </div>
+                <div class="whitespace-nowrap">
+                    <h1 class="text-xl font-bold text-primary">Al-Biruni</h1>
+                    <p class="text-xs text-secondary">Education System</p>
+                </div>
+            </div>
+            
+            <nav class="hidden md:flex items-center justify-between w-full px-8">
+                <div class="flex items-center space-x-6">
+                    <a href="#Home" class="text-primary hover:text-accent transition font-medium">Home</a>
+                    <a href="#AboutUs" class="text-gray-600 hover:text-accent transition font-medium">About Us</a>
+                    <a href="#Programs" class="text-gray-600 hover:text-accent transition font-medium">Programs</a>
+                    <a href="#Contact" class="text-gray-600 hover:text-accent transition font-medium">Contact</a>
+                </div>
+                <div class="flex space-x-4 ml-auto">
+                    <a href="#" id="main-login-btn" class="bg-white text-primary hover:bg-primary hover:text-white transition duration-300 rounded-full px-6 py-2 font-bold">Login</a>
+                    <a href="/registration" class="bg-secondary text-white hover:bg-secondary/80 transition duration-300 rounded-full px-6 py-2 font-bold">Register Your child now!</a>
+                </div>
+            </nav>
+            
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="md:hidden text-gray-600 text-2xl">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="mobile-menu fixed top-16 left-0 right-0 py-4 px-6 transition hidden md:hidden">
+            <div class="flex flex-col space-y-4">
+            <a href="#Home" class="text-primary hover:text-accent transition font-medium px-4 py-2 rounded">Home</a>
+            <a href="#AboutUs" class="text-gray-600 hover:text-accent transition font-medium px-4 py-2 rounded">About Us</a>
+            <a href="#Programs" class="text-gray-600 hover:text-accent transition font-medium px-4 py-2 rounded">Programs</a>
+            <a href="#Contact" class="text-gray-600 hover:text-accent transition font-medium px-4 py-2 rounded">Contact</a>
+            <a href="/login" class="bg-white text-primary hover:bg-primary hover:text-white transition duration-300 rounded-full px-6 py-2 font-bold">
+                Login
+            </a>
+            <a href="/registration" class="bg-secondary text-white hover:bg-secondary/80 transition duration-300 rounded-full px-6 py-2 font-bold">
+                Register Your child now!
+            </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section: Eid Greeting -->
+    <section id="Home" class="pt-20 pb-1 relative ">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute inset-0 bg-gray-200">
+                <div class="animate-pulse w-full h-full bg-gray-300"></div>
+            </div>
+        </div>
+        <div class="hero-overlay absolute inset-0"></div>
+        
+        <div class="container mx-auto px-4 relative z-10 flex flex-col items-center py-12 w-full">
+            <div class="bg-white p-6 md:p-10 rounded-lg shadow-soft w-full text-center">
+            <div class="overflow-hidden whitespace-nowrap relative">
+                <div class="animate-marquee arabic-text font-primary text-2xl text-primary">
+                Al-Biruni Education System – A distinguished educational institution that harmoniously blends academic excellence with Islamic values, nurturing minds and character for success in both this world and the hereafter.
+                </div>
+            
+            </div>
+            </div>
+        </div>
+
+        <style>
+            @keyframes marquee {
+            0% { transform: translateX(230%); }
+            100% { transform: translateX(-100%); }
+            }
+            .animate-marquee {
+            animation: marquee 30s linear infinite;
+            }
+            @media (max-width: 768px) {
+                .animate-marquee {
+                    animation: marquee 30s linear infinite;
+                }
+                @keyframes marquee {
+                 0% { transform: translateX(600%); }
+                 100% { transform: translateX(-100%); }
+            }
+            }
+        </style>
+    </section>
+
+    <!-- Introduction Section -->
+    <section id="AboutUs" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="md:w-1/2 mb-12 md:mb-0">
+                    <div class="relative">
+                        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-96"><img src="images/1.webp" alt="Al-Biruni Education System" class="rounded-lg shadow-lg mb-6"></div>
+                        <div class="absolute -bottom-6 -right-6 bg-secondary w-32 h-32 rounded-full flex items-center justify-center">
+                            <i class="fas fa-star text-white text-4xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="md:w-1/2 md:pl-16">
+                    <h2 class="text-4xl font-bold text-primary mb-6">
+                        Al-Biruni Education System
+                    </h2>
+                    <div class="section-divider w-48 h-0.5 mb-6"></div>
+            
+                    
+                    <p class="text-gray-700 text-lg leading-relaxed mb-8">
+                        Al-Biruni Education System is a well-organized and outstanding school 
+                        that offers quality education while nurturing strong Islamic values 
+                        and character in its students.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="bg-light p-6 rounded-lg">
+                            <i class="fas fa-user-graduate text-4xl text-secondary mb-4"></i>
+                            <h3 class="font-bold text-primary mb-2">Quality Education</h3>
+                            <p class="text-gray-600 text-sm">Modern curriculum with traditional values</p>
+                        </div>
+                        <div class="bg-light p-6 rounded-lg">
+                            <i class="fas fa-book-quran text-4xl text-secondary mb-4"></i>
+                            <h3 class="font-bold text-primary mb-2">Islamic Values</h3>
+                            <p class="text-gray-600 text-sm">Nurturing faith and character</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Basic Information -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-3xl mx-auto text-center">
+                <div class="flex justify-center mb-8">
+                    <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
+                        <i class="fas fa-info-circle text-white text-2xl"></i>
+                    </div>
+                </div>
+                
+                <h2 class="text-3xl font-bold text-primary mb-6">Basic Information</h2>
+                <div class="section-divider w-32 mx-auto h-0.5 mb-8"></div>
+                
+                <div class="bg-white p-8 rounded-lg shadow-soft text-left">
+                    <div class="mb-6 pb-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-500 mb-2">Full Name</h3>
+                        <p class="text-xl font-bold text-primary">Al-Biruni Education System</p>
+                    </div>
+                    
+                    <div class="mb-6 pb-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-500 mb-2">Location</h3>
+                        <p class="text-xl font-bold text-primary">Near Askar Fuel Station, Mangal, Abbottabad</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-500 mb-2">Website</h3>
+                        <p class="text-xl font-bold text-primary">al-biruni.web.app</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Programs & Facilities -->
+    <section id="Programs" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-primary mb-4">Our Programs & Facilities</h2>
+                <div class="section-divider w-48 mx-auto h-0.5 mb-6"></div>
+                <p class="max-w-2xl mx-auto text-gray-600">We provide comprehensive educational programs along with modern facilities to nurture holistic development of our students.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Programs Section -->
+                <div>
+                    <div class="flex items-center mb-8">
+                        <div class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                            <i class="fas fa-book text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-primary ml-4">Academic Programs</h3>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-light p-6 rounded-lg relative feature-item">
+                            <h4 class="font-bold text-lg text-primary mb-2">Primary & Secondary Education</h4>
+                            <p class="text-gray-600">A comprehensive curriculum focused on core subjects including sciences, mathematics, and languages.</p>
+                        </div>
+                        
+                        <div class="bg-light p-6 rounded-lg relative feature-item">
+                            <h4 class="font-bold text-lg text-primary mb-2">Islamic Studies</h4>
+                            <p class="text-gray-600">In-depth education in Quran, Hadith, Fiqh, and Islamic history to build strong spiritual foundations.</p>
+                        </div>
+                        
+                        <div class="bg-light p-6 rounded-lg relative feature-item">
+                            <h4 class="font-bold text-lg text-primary mb-2">Extracurricular Activities</h4>
+                            <p class="text-gray-600">Sports, arts, debates, and cultural programs to develop well-rounded individuals.</p>
+                        </div>
+                        
+                        <div class="bg-light p-6 rounded-lg relative feature-item">
+                            <h4 class="font-bold text-lg text-primary mb-2">Special Quran Program</h4>
+                            <p class="text-gray-600">Accelerated academic program for students who have completed Hifz-e-Quran.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Facilities Section -->
+                <div>
+                    <div class="flex items-center mb-8">
+                        <div class="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
+                            <i class="fas fa-building text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-primary ml-4">Our Facilities</h3>
+                    </div>
+                    
+                    <div class="bg-light rounded-xl overflow-hidden">
+                        <div class="bg-gray-200 border-2 border-dashed rounded-t-xl w-full h-54"><img src="images/2.png"></div>
+                        <div class="p-6">
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-secondary mt-1 mr-3"></i>
+                                    <span>Spacious classrooms with modern teaching aids</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-secondary mt-1 mr-3"></i>
+                                    <span>Well-equipped science and computer laboratories</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-secondary mt-1 mr-3"></i>
+                                    <span>Sports fields and multipurpose hall for activities</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-secondary mt-1 mr-3"></i>
+                                    <span>Dedicated place for Quran memorization and Islamic lectures</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="Contact" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-primary mb-4">Contact Us</h2>
+                    <div class="section-divider w-48 mx-auto h-0.5 mb-6"></div>
+                    <p class="max-w-2xl mx-auto text-gray-600">We'd love to hear from you. Reach out to us for admissions or any questions.</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-soft overflow-hidden">
+                    <div class="flex flex-col md:flex-row">
+                        <div class="md:w-1/2 bg-primary text-white p-10">
+                            <h3 class="text-2xl font-bold mb-6">Get in Touch</h3>
+                            
+                            <div class="space-y-6">
+                                <div class="flex items-start">
+                                    <i class="fas fa-phone-alt text-secondary text-2xl mr-4 mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-300">Call us at:</p>
+                                        <p class="text-xl font-bold">0992 339839</p>
+                                        <p class="text-xl font-bold">0311 5913366</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <i class="fas fa-envelope text-secondary text-2xl mr-4 mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-300">Email us at:</p>
+                                        <p class="text-xl font-bold">info@albiruni.net</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <i class="fas fa-map-marker-alt text-secondary text-2xl mr-4 mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-300">Our Location:</p>
+                                        <p class="text-lg">Near Askar Fuel Station, Mangal, Abbottabad</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-8">
+                                <h4 class="text-lg font-bold mb-4">Connect With Us</h4>
+                                <div class="flex space-x-4">
+                                    <a href="https://www.facebook.com/profile.php?id=100089242632271" target="_blank" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-secondary transition">
+                                        <i class="fab fa-facebook-f text-white"></i>
+                                    </a>
+                                    <a href="https://www.tiktok.com/@albiruni.educatio" target="_blank" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-secondary transition">
+                                        <i class="fab fa-tiktok text-white"></i>
+                                    </a>
+                                    <a href="https://www.instagram.com/albirunieducationsystem/" target="_blank" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-secondary transition">
+                                        <i class="fab fa-instagram text-white"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="md:w-1/2 p-10">
+                            <h3 class="text-2xl font-bold text-primary mb-6">Send a Message</h3>
+                            
+                            <!-- نموذج إرسال الرسائل -->
+                            <div class="message-form-container bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto mt-8">
+  
+    <form id="messageForm" class="space-y-4">
+        <div>
+            <label class="block text-gray-700 mb-2">Your Name</label>
+            <input type="text" id="senderName" required 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your name">
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Phone Number</label>
+            <input type="tel" id="senderPhone" required 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="03XXXXXXXXXX" pattern="^\03\d{9}$">
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Email Address</label>
+            <input type="email" id="senderEmail" required 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your email">
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Your Message</label>
+            <textarea id="messageText" required 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-32"
+                placeholder="Type your message here..."></textarea>
+        </div>
+        <button type="submit" 
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
+            Send Message
+        </button>
+    </form>
+</div>
+
+    <div id="success-message" class="success-message">
+        <svg class="success-icon w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <div>
+            <div class="font-bold text-lg">Message Sent!</div>
+            <div class="text-sm opacity-90">We will get back to you soon.</div>
+        </div>
+    </div>
+
+    <script>
+        // تهيئة Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCE-N0QQmjLie60yBSRe7rl6ulfb7YbwqU",
+            authDomain: "al-biruni.firebaseapp.com",
+            projectId: "al-biruni",
+            storageBucket: "al-biruni.appspot.com",
+            messagingSenderId: "77152769570",
+            appId: "1:77152769570:web:83b8de7bd64856d7f51c7b"
+        };
+
+        // تأكد من عدم تهيئة Firebase أكثر من مرة
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // معالجة إرسال النموذج
+        document.getElementById('messageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                sender: document.getElementById('senderName').value.trim(),
+                phone: document.getElementById('senderPhone').value.trim(),
+                email: document.getElementById('senderEmail').value.trim(),
+                text: document.getElementById('messageText').value.trim(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection('messages').add(formData);
+                
+                // إظهار رسالة النجاح
+                const successMessage = document.getElementById('success-message');
+                successMessage.classList.add('show');
+                
+                // إخفاء الرسالة بعد 3 ثواني
+                setTimeout(() => {
+                    successMessage.classList.remove('show');
+                }, 3000);
+                
+                // مسح النموذج
+                this.reset();
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message. Please try again.');
+            }
+        });
+
+        // زر لوجن: إذا كان مسجل مسبقاً يدخل مباشرة للوحة الأدمن
+        const mainLoginBtn = document.getElementById('main-login-btn');
+        if (mainLoginBtn) {
+            mainLoginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (localStorage.getItem('isLoggedIn')) {
+                    window.location.href = '/admin';
+                } else {
+                    window.location.href = '/login';
+                }
+            });
+        }
+    </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="bg-white w-10 h-10 rounded flex items-center justify-center">
+                            <i><img src="images/icon.png" class="w-10 h-10"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">Al-Biruni</h1>
+                            <p class="text-xs text-secondary">Education System</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm max-w-xs">Nurturing minds with quality education and Islamic values.</p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-12">
+                    <div>
+                        <h3 class="text-primary font-semibold mb-4">Quick Links</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="#Home" class="hover:text-secondary transition">Home</a></li>
+                            <li><a href="#AboutUs" class="hover:text-secondary transition">About Us</a></li>
+                            <li><a href="#Programs" class="hover:text-secondary transition">Programs</a></li>
+                            <li><a href="#Contact" class="hover:text-secondary transition">Contact</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-primary font-semibold mb-4">Contact</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li class="flex items-start">
+                                <i class="fas fa-phone-alt text-secondary mr-2 mt-1"></i>
+                                <p>0992 339839</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-envelope text-secondary mr-2 mt-1"></i>
+                                <p>info@albiruni.net</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-map-marker-alt text-secondary mr-2 mt-1"></i>
+                                <p>Near Askar Fuel Station, Abbottabad</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Google Maps Section -->
+            <div class="w-full mt-8 rounded-lg overflow-hidden shadow-lg">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3314.960468554454!2d73.24203387534885!3d34.24656777358144!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38de3b91f3703e55%3A0xab51e0f355908188!2sAlbiruni%20Education%20System!5e0!3m2!1sen!2s!4v1689835647799!5m2!1sen!2s" 
+                    width="100%" 
+                    height="300" 
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm">© 2025 Al-Biruni Education System. All rights reserved. <br>Designed and developed by <a href="https://suf-site.web.app/" target="_blank" style="color: rgb(92, 92, 173);"> Sufyan</a></p>
+                
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="https://www.facebook.com/profile.php?id=100089242632271" target="_blank" class="text-gray-400 hover:text-secondary transition">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://www.tiktok.com/@albiruni.educatio" target="_blank" class="text-gray-400 hover:text-secondary transition">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                    <a href="https://www.instagram.com/albirunieducationsystem/" target="_blank" class="text-gray-400 hover:text-secondary transition">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        menuToggle.addEventListener('click', () => {
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                setTimeout(() => mobileMenu.classList.add('active'), 10);
+            } else {
+                mobileMenu.classList.remove('active');
+                setTimeout(() => mobileMenu.classList.add('hidden'), 300);
+            }
+        });
+        
+        // Close mobile menu when clicking a link
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+            });
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Highlight active section in navigation
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('nav a, #mobile-menu a');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                
+                if (pageYOffset >= (sectionTop - 150)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('text-primary');
+                link.classList.add('text-gray-600');
+                
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.remove('text-gray-600');
+                    link.classList.add('text-primary');
+                }
+            });
+        });
+
+        // Show mobile buttons on small screens
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileButtons = document.querySelector('.mobile-buttons');
+            if (window.innerWidth <= 768) {
+                mobileButtons.style.display = 'flex';
+            }
+            window.addEventListener('resize', () => {
+                mobileButtons.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

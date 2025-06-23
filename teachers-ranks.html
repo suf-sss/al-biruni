@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teachers Ranks Control | AL-BIRUNI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="images/icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: #f8fafc; }
+    .access-denied-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .access-denied-content {
+      background: white; padding: 2rem; border-radius: 1rem; text-align: center;
+      max-width: 90%; width: 400px; animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .rank-btn.active {
+      background: #2563eb;
+      color: #fff;
+    }
+    .rank-btn {
+      background: #e0e7ef;
+      color: #2563eb;
+      border-radius: 6px;
+      padding: 6px 16px;
+      margin-right: 6px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .rank-btn:hover {
+      background: #2563eb;
+      color: #fff;
+    }
+    .delete-btn {
+      background: #ef4444;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 16px;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .delete-btn:hover {
+      background: #b91c1c;
+    }
+    .teacher-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px #0001;
+      padding: 22px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .teacher-list {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .teacher-header {
+      font-size: 1.2em;
+      font-weight: 600;
+      color: #2563eb;
+    }
+    .teacher-info-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .teacher-meta {
+      color: #64748b;
+      font-size: 0.98em;
+    }
+    @media (max-width: 600px) {
+      .teacher-info-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .teacher-card { padding: 14px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <script>
+     if (!localStorage.getItem('isLoggedIn')) {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f4f6;">
+          <div style="background:white;padding:2.5rem 2rem;border-radius:1.2rem;box-shadow:0 4px 24px #0001;text-align:center;max-width:90vw;">
+            <div style="font-size:2.5rem;color:#ef4444;margin-bottom:1rem;">
+              <i style='font-size:2.5rem;' class='fa fa-ban'></i>
+            </div>
+            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Access Denied</div>
+            <div style="color:#64748b;margin-bottom:1.5rem;">You are not authorized to access this page.<br>Please login first.</div>
+            <a href="/login" style="display:inline-block;background:#2563eb;color:white;padding:0.7rem 2.2rem;border-radius:2rem;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #2563eb22;">Go to Login</a>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { window.location.href = '/'; }, 2200);
+    }
+    // منع دخول mid و nor لهذه الصفحة
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'mid' || userRole === 'nor') {
+      document.body.innerHTML = `
+        <div class="access-denied-modal" style="background: #636363;">
+          <div class="access-denied-content">
+            <div style="font-size:2.5rem;color:#ef4444;margin-bottom:1rem;">
+              <i style='font-size:2.5rem;' class='fa fa-ban'></i>
+            </div>
+            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Access Denied</div>
+            <div style="color:#64748b;margin-bottom:1.5rem;">
+              Please get access from the admin.<br>
+              You will be redirected to Admin Dashboard.
+            </div>
+            <a href="/admin" style="display:inline-block;background:#2563eb;color:white;padding:0.7rem 2.2rem;border-radius:2rem;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #2563eb22;">Go to Admin Dashboard</a>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { window.location.href = '/admin'; }, 3000);
+    } else if (userRole !== 'adi') {
+      document.body.innerHTML = `
+        <div class="access-denied-modal" style="background: #636363;">
+          <div class="access-denied-content">
+            <div style="font-size:2.5rem;color:#ef4444;margin-bottom:1rem;">
+              <i style='font-size:2.5rem;' class='fa fa-ban'></i>
+            </div>
+            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Access Denied</div>
+            <div style="color:#64748b;margin-bottom:1.5rem;">This page is only available for the Super Admin (ADMIN).</div>
+            <a href="/admin" style="display:inline-block;background:#2563eb;color:white;padding:0.7rem 2.2rem;border-radius:2rem;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #2563eb22;">Back to Dashboard</a>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { window.location.href = '/'; }, 1000);
+    }
+  </script>
+  <!-- Navbar (like admin dashboard) -->
+  <div class="bg-white shadow-sm border-b mb-8">
+    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-center justify-between h-auto sm:h-16 gap-2 sm:gap-0 py-2 sm:py-0">
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Teachers Ranks Control</h1>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto nav-links">
+          <a href="/admin" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-center">
+            Back to Dashboard
+          </a>
+          <button id="show-role-info-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-center shadow">
+            What does each role mean?
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-3xl mx-auto mt-8 mb-8">
+    <h1 class="text-3xl font-bold text-blue-800 mb-6 text-center">Teachers Ranks Control</h1>
+    <p class="text-gray-700 mb-8 text-center">Manage teachers' ranks or remove teachers from the system.</p>
+    <div id="teachers-list" class="teacher-list"></div>
+  </div>
+  <!-- Modal for Role Info -->
+  <div id="role-info-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 relative" style="max-height:90vh;overflow-y:auto;">
+      <button id="close-role-info-modal" class="absolute top-2 right-2 text-gray-700 hover:text-red-600 text-3xl font-bold bg-white rounded-full shadow border border-gray-200 w-10 h-10 flex items-center justify-center z-10" style="opacity:1;">
+        &times;
+      </button>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2">
+        <h2 class="text-xl font-bold text-blue-800 mb-2">Role Permissions</h2>
+        <ul class="list-disc pl-6 text-gray-700 text-base space-y-2">
+          <li>
+            <span class="font-bold text-blue-700">Vice Principal:</span>
+            <ul class="pl-6 mt-1 space-y-1">
+              <li>✅ Access all pages</li>
+              <li>✅ Add students</li>
+              <li>✅ Edit student information</li>
+              <li>✅ Delete students</li>
+              <li>✅ Change teachers' roles</li>
+              <li>✅ Delete teachers</li>
+            </ul>
+          </li>
+          <li>
+            <span class="font-bold text-indigo-800">HoD (Head of Department):</span>
+            <ul class="pl-6 mt-1 space-y-1">
+              <li>✅ Access Chat & Suggestions & Attendance page Only</li>
+              <li>✅ Add/edit/delete students</li>
+              <li>✅ Mark attendance & absence</li>
+              <li>❌ Cannot change teachers' roles</li>
+              <li>❌ Cannot delete teachers</li>
+              <li>❌ Cannot access TRC & Requests page</li>
+            </ul>
+          </li>
+          <li>
+            <span class="font-bold text-green-700">Teacher:</span>
+            <ul class="pl-6 mt-1 space-y-1">
+              <li>✅ Access Chat & Suggestions & Attendance page Only</li>
+              <li>✅ Mark Attendance & Absence</li>
+              <li>❌ Cannot add/edit/delete students</li>
+              <li>❌ Cannot access TRC (Teachers Ranks Control)</li>
+              <li>❌ Cannot access Request page</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCE-N0QQmjLie60yBSRe7rl6ulfb7YbwqU",
+      authDomain: "al-biruni.firebaseapp.com",
+      projectId: "al-biruni",
+      storageBucket: "al-biruni.appspot.com",
+      messagingSenderId: "77152769570",
+      appId: "1:77152769570:web:83b8de7bd64856d7f51c7b"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // تحديث حالة lastActive للأستاذ الحالي كل دقيقة وعند الدخول والخروج من الصفحة
+    function updateOwnLastActive(isOnline = true) {
+      const teacherData = localStorage.getItem('teacherData');
+      if (teacherData) {
+        try {
+          const t = JSON.parse(teacherData);
+          if (t && t.name) {
+            db.collection('teachers')
+              .where('name', '==', t.name)
+              .limit(1)
+              .get()
+              .then(snapshot => {
+                if (!snapshot.empty) {
+                  const docId = snapshot.docs[0].id;
+                  // إذا خرج من الصفحة، اجعل lastActive = 0 (أوفلاين فوري)
+                  db.collection('teachers').doc(docId).update({ lastActive: isOnline ? Date.now() : 0 });
+                }
+              });
+          }
+        } catch {}
+      }
+    }
+    // حدث lastActive عند تحميل الصفحة وكل دقيقة، وعند الخروج من الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+      updateOwnLastActive(true);
+      setInterval(() => updateOwnLastActive(true), 60 * 1000);
+      // عند الخروج أو إغلاق الصفحة، اجعل المعلم أوفلاين فوراً
+      window.addEventListener('beforeunload', function() {
+        updateOwnLastActive(false);
+      });
+      // عند فقدان التركيز (مثلاً غلق التبويب)، اجعل أوفلاين
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+          updateOwnLastActive(false);
+        } else if (document.visibilityState === 'visible') {
+          updateOwnLastActive(true);
+        }
+      });
+
+      // عند الضغط على زر تسجيل الخروج، اجعل المعلم أوفلاين فوراً
+      document.addEventListener('click', function(e) {
+        // ابحث عن أي زر تسجيل خروج في الصفحة
+        if (
+          (e.target && e.target.id === 'logout-btn') ||
+          (e.target && e.target.id === 'logout-btn-mobile') ||
+          (e.target.closest && e.target.closest('#logout-btn')) ||
+          (e.target.closest && e.target.closest('#logout-btn-mobile'))
+        ) {
+          updateOwnLastActive(false);
+          // أضف تأخير بسيط قبل مسح localStorage أو إعادة التوجيه (إن وجد)
+          setTimeout(() => {}, 200);
+        }
+      });
+
+      // عند حذف بيانات الدخول من localStorage (مثلاً تسجيل خروج من كود آخر)
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'isLoggedIn' && e.newValue === null) {
+          updateOwnLastActive(false);
+        }
+        if (e.key === 'teacherData' && e.newValue === null) {
+          updateOwnLastActive(false);
+        }
+      });
+    });
+
+    // Real-time load teachers and render
+    function renderTeachers(snapshot) {
+      const list = document.getElementById('teachers-list');
+      list.innerHTML = '';
+      if (snapshot.empty) {
+        list.innerHTML = '<div class="text-center text-gray-400">No teachers found.</div>';
+        return;
+      }
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        const id = doc.id;
+        // تحقق من حالة الاتصال لكل أستاذ في نفس اللحظة
+        let isOnline = false;
+        if (t.lastActive && typeof t.lastActive === 'number') {
+          isOnline = (Date.now() - t.lastActive) < 2 * 60 * 1000; // أونلاين إذا آخر نشاط أقل من دقيقتين
+        }
+        const statusIcon = isOnline
+          ? `<span title="Online" style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:13px;height:13px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 2px #fff;"></span><span class="text-green-600 text-xs font-semibold">Online</span></span>`
+          : `<span title="Offline" style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:13px;height:13px;background:#ef4444;border-radius:50%;box-shadow:0 0 0 2px #fff;"></span><span class="text-gray-400 text-xs font-semibold">Offline</span></span>`;
+        const card = document.createElement('div');
+        card.className = 'teacher-card';
+        card.innerHTML = `
+          <div class="teacher-header">
+            ${t.name || 'Unknown Name'}
+            <span style="margin-left:10px;vertical-align:middle;" id="status-${id}">${statusIcon}</span>
+          </div>
+          <div class="teacher-info-row">
+            <div class="teacher-meta">
+              <div><b>Phone:</b> ${t.phone || '-'}</div>
+              <div><b>Title:</b> ${t.title || '-'}</div>
+              <div><b>Subject:</b> ${t.subject || '-'}</div>
+            </div>
+            <div>
+              <button class="rank-btn${t.role === 'adi' ? ' active' : ''}" data-rank="adi" data-id="${id}">Vice Principal</button>
+              <button class="rank-btn${t.role === 'mid' ? ' active' : ''}" data-rank="mid" data-id="${id}">HoD</button>
+              <button class="rank-btn${!t.role || t.role === 'nor' ? ' active' : ''}" data-rank="nor" data-id="${id}">Teacher</button>
+              <button class="delete-btn" onclick="deleteTeacher('${id}', '${t.name || ''}')">Delete</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      // Attach event listeners for rank buttons after rendering
+      document.querySelectorAll('.rank-btn').forEach(btn => {
+        btn.onclick = async function() {
+          const id = this.getAttribute('data-id');
+          const rank = this.getAttribute('data-rank');
+          await setRank(id, rank);
+          const parent = this.parentElement;
+          parent.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+        };
+      });
+    }
+
+    // Real-time listener for teachers collection
+    function startTeachersRealtime() {
+      db.collection('teachers').orderBy('name').onSnapshot(renderTeachers);
+    }
+
+    // Set teacher rank
+    async function setRank(id, rank) {
+      try {
+        await db.collection('teachers').doc(id).update({ role: rank });
+        // Update UI instantly without reload
+        const card = document.getElementById('rank-' + id)?.closest('.teacher-card');
+        if (card) {
+          // Remove all active classes from rank buttons in this card
+          card.querySelectorAll('.rank-btn').forEach(btn => btn.classList.remove('active'));
+          // Add active to the clicked button
+          card.querySelector(`.rank-btn[onclick*="'${rank}'"]`)?.classList.add('active');
+        }
+        // Update the rank text
+        const rankSpan = document.getElementById('rank-' + id);
+        if (rankSpan) rankSpan.textContent = rank;
+      } catch {
+        alert('Failed to update rank.');
+      }
+    }
+
+    // Delete teacher
+    async function deleteTeacher(id, name) {
+      // إنشاء مودال تأكيد جميل
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40';
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative transform transition-all">
+          <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6">
+              <svg class="animate-pulse h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Delete Teacher</h3>
+            <p class="text-gray-600 mb-8">Are you sure you want to delete <span class="font-bold text-red-700">${name}</span>? This action cannot be undone.</p>
+            <div class="flex justify-center space-x-4">
+              <button id="cancel-delete-teacher" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transform hover:scale-105 transition-all duration-300 font-medium">
+                Cancel
+              </button>
+              <button id="confirm-delete-teacher" class="group relative px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transform hover:scale-105 transition-all duration-300 font-medium overflow-hidden">
+                <span class="relative z-10 group-hover:opacity-0 transition-opacity duration-300">Delete</span>
+                <span class="loading-icon absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <svg class="animate-spin -ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Deleting...
+                </span>
+                <span class="success-icon absolute inset-0 flex items-center justify-center opacity-0">
+                  <svg class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                  </svg>
+                  Deleted!
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const cancelBtn = modal.querySelector('#cancel-delete-teacher');
+      const confirmBtn = modal.querySelector('#confirm-delete-teacher');
+
+      cancelBtn.onclick = () => {
+        document.body.removeChild(modal);
+      };
+
+      confirmBtn.onclick = async () => {
+        try {
+          // إظهار حالة التحميل
+          confirmBtn.classList.add('deleting');
+          await db.collection('teachers').doc(id).delete();
+          // إظهار حالة النجاح
+          confirmBtn.classList.remove('deleting');
+          confirmBtn.classList.add('success');
+          setTimeout(() => {
+            document.body.removeChild(modal);
+          }, 1200);
+        } catch {
+          alert('Failed to delete teacher.');
+          document.body.removeChild(modal);
+        }
+      };
+    }
+
+    // Expose functions globally
+    window.setRank = setRank;
+    window.deleteTeacher = deleteTeacher;
+
+    // Initial real-time load
+    document.addEventListener('DOMContentLoaded', startTeachersRealtime);
+
+    // Role info modal logic
+    document.addEventListener('DOMContentLoaded', function() {
+      var showBtn = document.getElementById('show-role-info-btn');
+      var modal = document.getElementById('role-info-modal');
+      var closeBtn = document.getElementById('close-role-info-modal');
+      if (showBtn && modal && closeBtn) {
+        showBtn.onclick = function() { modal.classList.remove('hidden'); };
+        closeBtn.onclick = function() { modal.classList.add('hidden'); };
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) modal.classList.add('hidden');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Tracking | AL-BIRUNI</title>
+  <link rel="icon" href="images/icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    .access-denied-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .access-denied-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
+      max-width: 90%;
+      width: 400px;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+  <script>
+    if (!localStorage.getItem('isLoggedIn')) {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f4f6;">
+          <div style="background:white;padding:2.5rem 2rem;border-radius:1.2rem;box-shadow:0 4px 24px #0001;text-align:center;max-width:90vw;">
+            <div style="font-size:2.5rem;color:#ef4444;margin-bottom:1rem;">
+              <i style='font-size:2.5rem;' class='fa fa-ban'></i>
+            </div>
+            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Access Denied</div>
+            <div style="color:#64748b;margin-bottom:1.5rem;">You are not authorized to access this page.<br>Please login first.</div>
+            <a href="/login" style="display:inline-block;background:#2563eb;color:white;padding:0.7rem 2.2rem;border-radius:2rem;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #2563eb22;">Go to Login</a>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { window.location.href = '/'; }, 2200);
+    }
+  </script>
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-center justify-between h-auto sm:h-16 gap-2 sm:gap-0 py-2 sm:py-0">
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Attendance Tracking</h1>
+          <div class="text-gray-600" id="current-time"></div>
+        </div>
+        <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+          <a href="/admin" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-center">
+            Back to Admin Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <!-- Search & Filters -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Search Student</label>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Type student name..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+          <select id="grade-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="">All Grades</option>
+            <option value="Nursery">Nursery</option>
+            <option value="Kindergarten">Kindergarten</option>
+            <option value="Prep">Prep</option>
+            <option value="3rd">3rd</option>
+            <option value="4th">4th</option>
+            <option value="5th">5th</option>
+            <option value="6th">6th</option>
+            <option value="7th">7th</option>
+            <option value="8th">8th</option>
+            <option value="9th">9th</option>
+            <option value="10th">10th</option>
+            <option value="1st Year (Girls only)">1st Year (Girls only)</option>
+            <option value="2nd Year (Girls only)">2nd Year (Girls only)</option>
+            <option value="Accelerated program">Accelerated program</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <select id="status-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="">All</option>
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Stats -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-green-100 rounded-lg p-4 text-center">
+          <span class="text-2xl font-bold text-green-700" id="present-count">0</span>
+          <p class="text-sm text-green-600">Present Today</p>
+        </div>
+        <div class="bg-red-100 rounded-lg p-4 text-center">
+          <span class="text-2xl font-bold text-red-700" id="absent-count">0</span>
+          <p class="text-sm text-red-600">Absent Today</p>
+        </div>
+        <div class="bg-gray-100 rounded-lg p-4 text-center">
+          <span class="text-2xl font-bold text-gray-700" id="not-marked-count">0</span>
+          <p class="text-sm text-gray-600">Not Marked Yet</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="px-2 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <h3 class="text-base sm:text-lg font-medium text-gray-900">
+          Students List (<span id="visible-students-count">0</span> students)
+        </h3>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <button onclick="filterByStatus('all')" id="show-all" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold w-full sm:w-auto">
+            All
+          </button>
+          <button onclick="filterByStatus('Present')" id="show-present" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 font-bold w-full sm:w-auto">
+            Present Students
+          </button>
+          <button onclick="filterByStatus('Absent')" id="show-absent" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold w-full sm:w-auto">
+            Absent Students
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <div style="max-height: 600px; overflow-y: auto;">
+          <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Grade</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-tbody" class="bg-white divide-y divide-gray-200">
+              <!-- Will be filled by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date Selection Section -->
+  <div class="bg-white rounded-lg shadow overflow-hidden mt-8">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-medium text-gray-900">Select Date</h3>
+    </div>
+    <div class="p-6">
+      <!-- Years -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Academic Years</label>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="selectYear('2025')" class="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium">2025</button>
+          <button onclick="selectYear('2026')" class="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium">2026</button>
+          <button onclick="selectYear('2027')" class="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium">2027</button>
+          <button onclick="selectYear('2028')" class="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium">2028</button>
+        </div>
+      </div>
+      
+      <!-- Months -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Months</label>
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <button onclick="selectMonth(1)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">January</button>
+          <button onclick="selectMonth(2)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">February</button>
+          <button onclick="selectMonth(3)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">March</button>
+          <button onclick="selectMonth(4)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">April</button>
+          <button onclick="selectMonth(5)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">May</button>
+          <button onclick="selectMonth(6)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">June</button>
+          <button onclick="selectMonth(7)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">July</button>
+          <button onclick="selectMonth(8)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">August</button>
+          <button onclick="selectMonth(9)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">September</button>
+          <button onclick="selectMonth(10)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">October</button>
+          <button onclick="selectMonth(11)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">November</button>
+          <button onclick="selectMonth(12)" class="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium">December</button>
+        </div>
+      </div>
+
+      <!-- Days -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Days</label>
+        <div class="grid grid-cols-7 gap-2">
+          <!-- Day buttons will be generated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Current Selection -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <p class="text-center text-gray-700">
+          Selected Date: <span id="selected-date" class="font-semibold">${today}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Modal for Student Details before closing body tag -->
+<div id="student-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+  <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+    <button onclick="closeStudentModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-blue-700">Student Details</h2>
+    <div id="student-modal-content" class="space-y-2">
+      <!-- Will be filled by JS -->
+    </div>
+  </div>
+</div>
+
+  <script>
+    // Firebase config - يجب أن يكون في البداية
+    const firebaseConfig = {
+      apiKey: "AIzaSyCE-N0QQmjLie60yBSRe7rl6ulfb7YbwqU",
+      authDomain: "al-biruni.firebaseapp.com",
+      projectId: "al-biruni",
+      storageBucket: "al-biruni.appspot.com",
+      messagingSenderId: "77152769570",
+      appId: "1:77152769570:web:83b8de7bd64856d7f51c7b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+        function updateOwnLastActive(isOnline = true) {
+      const teacherData = localStorage.getItem('teacherData');
+      if (teacherData) {
+        try {
+          const t = JSON.parse(teacherData);
+          if (t && t.name) {
+            db.collection('teachers')
+              .where('name', '==', t.name)
+              .limit(1)
+              .get()
+              .then(snapshot => {
+                if (!snapshot.empty) {
+                  const docId = snapshot.docs[0].id;
+                  // إذا خرج من الصفحة، اجعل lastActive = 0 (أوفلاين فوري)
+                  db.collection('teachers').doc(docId).update({ lastActive: isOnline ? Date.now() : 0 });
+                }
+              });
+          }
+        } catch {}
+      }
+    }
+    // حدث lastActive عند تحميل الصفحة وكل دقيقة، وعند الخروج من الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+      updateOwnLastActive(true);
+      setInterval(() => updateOwnLastActive(true), 60 * 1000);
+      // عند الخروج أو إغلاق الصفحة، اجعل المعلم أوفلاين فوراً
+      window.addEventListener('beforeunload', function() {
+        updateOwnLastActive(false);
+      });
+      // عند فقدان التركيز (مثلاً غلق التبويب)، اجعل أوفلاين
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+          updateOwnLastActive(false);
+        } else if (document.visibilityState === 'visible') {
+          updateOwnLastActive(true);
+        }
+      });
+    });
+
+    // تعريف الدوال المساعدة أولاً
+    function isCurrentDate(dateStr) {
+      const now = new Date();
+      now.setHours(now.getHours() + 5); // تعديل المنطقة الزمنية إلى UTC+5 (باكستان)
+      const today = now.toISOString().split('T')[0];
+      return dateStr === today;
+    }
+
+    function getCurrentDate() {
+      const now = new Date();
+      now.setHours(now.getHours() + 5); // تعديل المنطقة الزمنية إلى UTC+5 (باكستان)
+      return now.toISOString().split('T')[0];
+    }
+
+    // تعريف المتغيرات
+    let students = [];
+    let attendanceRecords = [];
+    let selectedYear = new Date().getFullYear();
+    let selectedMonth = new Date().getMonth() + 1;
+    let selectedDay = new Date().getDate();
+    let today = getCurrentDate();
+
+    // تحسين دالة تحميل البيانات لتكون أكثر فعالية
+    async function loadData() {
+      try {
+        const studentsSnap = await db.collection('students').get();
+        const attendanceSnap = await db.collection('attendanceRecords')
+          .where('date', '==', today)
+          .get();
+
+        students = studentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        attendanceRecords = attendanceSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        renderStudents();
+        updateStats();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('students-tbody').innerHTML = `
+          <tr><td colspan="4" class="text-center text-red-500 py-4">
+            Error loading students. Please try again.
+          </td></tr>
+        `;
+      }
+    }
+
+    // تحديث أحداث الفلتر
+    function setupFilters() {
+      const searchInput = document.getElementById('search-input');
+      const gradeFilter = document.getElementById('grade-filter');
+      const statusFilter = document.getElementById('status-filter');
+
+      // تحديث فوري عند تغيير أي فلتر
+      searchInput.addEventListener('input', () => {
+        renderStudents();
+        updateStats();
+      });
+
+      gradeFilter.addEventListener('change', () => {
+        renderStudents();
+        updateStats();
+      });
+
+      statusFilter.addEventListener('change', () => {
+        renderStudents();
+        updateStats();
+      });
+    }
+
+    // تحميل البيانات عند بدء الصفحة
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadData();
+      setupFilters();
+      startRealTimeUpdates();
+    });
+
+    // Fixed date functions
+    function formatDate(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    function getCurrentDate() {
+        const now = new Date();
+        now.setHours(now.getHours() + 5); // تعديل المنطقة الزمنية إلى UTC+5 (باكستان)
+        return now.toISOString().split('T')[0];
+    }
+
+    // Update date selection functions
+    function selectYear(year) {
+        selectedYear = parseInt(year);
+        updateSelectedDate();
+        highlightSelectedButtons();
+    }
+
+    function selectMonth(month) {
+        selectedMonth = parseInt(month);
+        selectedDay = 1; // Reset day when month changes
+        updateSelectedDate();
+        highlightSelectedButtons();
+    }
+
+    function selectDay(day) {
+        selectedDay = parseInt(day);
+        updateSelectedDate();
+        highlightSelectedButtons();
+    }
+
+    function updateSelectedDate() {
+        const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+        document.getElementById('selected-date').textContent = `${dateStr} (Pakistan Time)`;
+        today = dateStr; // تحديث today بالتاريخ المحدد
+        loadData();
+        document.querySelector('.grid-cols-7').innerHTML = generateDayButtons();
+
+        // التحقق إذا كان التاريخ المحدد هو اليوم الحالي
+        if (isCurrentDate(dateStr)) {
+          enableAttendanceActions();
+        } else {
+          disableAttendanceActions();
+        }
+    }
+
+    // دالة لتمكين أزرار التحضير والتغيب
+    function enableAttendanceActions() {
+      const buttons = document.querySelectorAll('[data-status]'); // فقط أزرار الحضور والغياب
+      buttons.forEach(button => {
+        button.classList.remove('pointer-events-none', 'opacity-50');
+      });
+    }
+
+    // دالة لتعطيل أزرار التحضير والتغيب
+    function disableAttendanceActions() {
+      const buttons = document.querySelectorAll('[data-status]'); // فقط أزرار الحضور والغياب
+      buttons.forEach(button => {
+        button.classList.add('pointer-events-none', 'opacity-50');
+      });
+    }
+
+    // دالة لتوليد أزرار الأيام
+function generateDayButtons() {
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+  let html = '';
+  
+  for (let i = 1; i <= daysInMonth; i++) {
+    html += `
+      <button onclick="selectDay(${i})" 
+        class="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium ${
+          i === selectedDay ? 'bg-purple-600 text-white' : ''
+        }">
+        ${i}
+      </button>
+    `;
+  }
+  return html;
+}
+
+    function highlightSelectedButtons() {
+      // Highlight selected year
+      document.querySelectorAll('button').forEach(btn => {
+        if (btn.onclick.toString().includes('selectYear')) {
+          if (btn.textContent === selectedYear.toString()) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('bg-blue-100', 'text-blue-700');
+          } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-blue-100', 'text-blue-700');
+          }
+        }
+        if (btn.onclick.toString().includes('selectMonth')) {
+          const monthIndex = parseInt(btn.onclick.toString().match(/\d+/)[0]);
+          if (monthIndex === selectedMonth) {
+            btn.classList.add('bg-green-600', 'text-white');
+            btn.classList.remove('bg-green-100', 'text-green-700');
+          } else {
+            btn.classList.remove('bg-green-600', 'text-white');
+            btn.classList.add('bg-green-100', 'text-green-700');
+          }
+        }
+        // Highlight selected day
+        if (btn.onclick && btn.onclick.toString().includes('selectDay')) {
+          const day = parseInt(btn.textContent);
+          if (day === selectedDay) {
+            btn.classList.add('bg-purple-600', 'text-white');
+            btn.classList.remove('bg-purple-100', 'text-purple-700');
+          } else {
+            btn.classList.remove('bg-purple-600', 'text-white');
+            btn.classList.add('bg-purple-100', 'text-purple-700');
+          }
+        }
+      });
+    }
+
+    // Event listeners
+    document.getElementById('search-input').addEventListener('input', renderStudents);
+    document.getElementById('grade-filter').addEventListener('change', renderStudents);
+    document.getElementById('status-filter').addEventListener('change', renderStudents);
+
+    // Add these new functions for viewing student details
+function viewStudent(studentId) {
+  const student = students.find(s => s.id === studentId);
+  if (!student) return;
+
+  const content = document.getElementById('student-modal-content');
+  content.innerHTML = `
+    <div>
+      <div><span class="font-semibold text-gray-700">Student Name:</span> ${student.name || 'Unknown Name'}</div>
+      <div><span class="font-semibold text-gray-700">Gender:</span> ${student.gender || 'Unknown Gender'}</div>
+      <div><span class="font-semibold text-gray-700">Grade:</span> ${student.grade || 'Unknown Grade'}</div>
+      <div><span class="font-semibold text-gray-700">Parent Name:</span> ${student.parent || 'Unknown Parent'}</div>
+      <div><span class="font-semibold text-gray-700">Phone Number:</span> ${student.phone || 'Unknown Phone'}</div>
+      <div><span class="font-semibold text-gray-700">Parent Email:</span> ${student.email || 'Unknown Email'}</div>
+    </div>
+  `;
+  document.getElementById('student-modal').classList.remove('hidden');
+}
+
+function closeStudentModal() {
+  document.getElementById('student-modal').classList.add('hidden');
+}
+
+// Add to window object
+window.viewStudent = viewStudent;
+window.closeStudentModal = closeStudentModal;
+
+// Initialize with 2025 as default year
+selectedYear = 2025;
+
+  // تعريف دالة startRealTimeUpdates
+  function startRealTimeUpdates() {
+    db.collection('attendanceRecords')
+      .where('date', '==', today)
+      .onSnapshot(snapshot => {
+        attendanceRecords = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        renderStudents();
+        updateStats();
+      });
+  }
+
+  // تحديث دالة getCurrentDateTime لتشمل الوقت الحالي بدقة
+  function getCurrentDateTime() {
+    const now = new Date();
+    now.setHours(now.getUTCHours() + 5); // تعديل المنطقة الزمنية إلى UTC+5 (باكستان)
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().split(' ')[0].slice(0, 5); // عرض الوقت بصيغة HH:mm
+    return { date, time };
+  }
+
+  // تحديث الوقت في واجهة المستخدم
+  function updateClock() {
+    const { date, time } = getCurrentDateTime();
+    document.getElementById('current-time').textContent = `${date} ${time} (Pakistan Time)`;
+  }
+
+  // استدعاء updateClock كل دقيقة
+  setInterval(updateClock, 60000);
+  updateClock();
+
+  // تعديل دالة renderStudents
+  function renderStudents() {
+    const searchQuery = document.getElementById('search-input').value.toLowerCase();
+    const gradeFilter = document.getElementById('grade-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
+    const tbody = document.getElementById('students-tbody');
+    tbody.innerHTML = '';
+
+    // تصفية الطلاب بناءً على البحث والفلترة
+    const filteredStudents = students.filter(student => {
+      const matchesSearch = student.name?.toLowerCase().includes(searchQuery);
+      const matchesGrade = !gradeFilter || student.grade === gradeFilter;
+      if (!matchesSearch || !matchesGrade) return false;
+      
+      const attendanceRecord = attendanceRecords.find(r => r.studentId === student.id);
+      const status = attendanceRecord ? attendanceRecord.status : 'Not Marked';
+      const matchesStatus = !statusFilter || status === statusFilter;
+      
+      return matchesStatus;
+    });
+
+    if (filteredStudents.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center text-gray-500 py-4">
+            No students found.
+          </td>
+        </tr>
+      `;
+      document.getElementById('visible-students-count').textContent = '0';
+      return;
+    }
+
+    filteredStudents.forEach(student => {
+      const attendanceRecord = attendanceRecords.find(r => r.studentId === student.id);
+      const status = attendanceRecord ? attendanceRecord.status : 'Not Marked';
+      const isToday = isCurrentDate(today);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-6 py-4">${student.name || 'Unknown Name'}</td>
+        <td class="px-6 py-4">${student.grade || 'Unknown Grade'}</td>
+        <td class="px-6 py-4 ${status === 'Present' ? 'text-green-600' : status === 'Absent' ? 'text-red-600' : 'text-gray-500'}">
+          ${status}
+        </td>
+        <td class="px-6 py-4 flex gap-2">
+          ${isToday ? `
+            <button data-student-id="${student.id}" data-status="Present" onclick="markAttendance('${student.id}', 'Present')" 
+              class="attendance-btn bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+              Mark Present
+            </button>
+            <button data-student-id="${student.id}" data-status="Absent" onclick="markAttendance('${student.id}', 'Absent')" 
+              class="attendance-btn bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+              Mark Absent
+            </button>
+          ` : ''}
+          <button onclick="viewStudent('${student.id}')" 
+            class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+            View
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('visible-students-count').textContent = filteredStudents.length;
+    updateStats();
+  }
+
+  // إضافة مستمعي الأحداث
+document.getElementById('search-input').addEventListener('input', renderStudents);
+document.getElementById('grade-filter').addEventListener('change', renderStudents);
+document.getElementById('status-filter').addEventListener('change', renderStudents);
+
+// إضافة الدالة للنافذة العامة
+window.filterByStatus = filterByStatus;
+
+  // تعديل دالة markAttendance لتحديث حالة الحضور
+  async function markAttendance(studentId, status) {
+    try {
+      const student = students.find(s => s.id === studentId);
+      if (!student) {
+        alert('Student not found.');
+        return;
+      }
+
+      const record = {
+        studentId,
+        studentName: student.name,
+        date: today,
+        status,
+        grade: student.grade
+      };
+
+      const existingRecord = attendanceRecords.find(r => r.studentId === studentId);
+
+      if (existingRecord) {
+        // تحديث السجل الموجود
+        await db.collection('attendanceRecords').doc(existingRecord.id).update(record);
+      } else {
+        // إضافة سجل جديد
+        await db.collection('attendanceRecords').add(record);
+      }
+
+      // تحديث البيانات وإعادة عرض الجدول
+      await loadData();
+    } catch (error) {
+      console.error('Error marking attendance:', error);
+      alert('Failed to mark attendance. Please try again.');
+    }
+  }
+
+  // تعريف دالة updateStats إذا لم تكن موجودة
+  function updateStats() {
+    const gradeFilter = document.getElementById('grade-filter').value;
+    const filteredByGrade = students.filter(student => 
+      !gradeFilter || student.grade === gradeFilter
+    );
+
+    let present = 0;
+    let absent = 0;
+
+    filteredByGrade.forEach(student => {
+      const record = attendanceRecords.find(r => r.studentId === student.id);
+      if (record) {
+        if (record.status === 'Present') present++;
+        else if (record.status === 'Absent') absent++;
+      }
+    });
+
+    const totalStudents = filteredByGrade.length;
+    const notMarked = totalStudents - (present + absent);
+
+    // تحديث الأرقام في واجهة المستخدم
+    document.getElementById('present-count').textContent = present;
+    document.getElementById('absent-count').textContent = absent;
+    document.getElementById('not-marked-count').textContent = notMarked;
+  }
+
+  // تعديل دالة filterByStatus
+function filterByStatus(status) {
+  const tbody = document.getElementById('students-tbody');
+  tbody.innerHTML = '';
+
+  // إنشاء نسخة من الطلاب المفلترين حسب الصف (إذا كان هناك فلتر صف)
+  const gradeFilter = document.getElementById('grade-filter').value;
+  let filteredStudents = students.filter(student => 
+    !gradeFilter || student.grade === gradeFilter
+  );
+
+  // فلترة إضافية حسب الحالة المحددة
+  filteredStudents = filteredStudents.filter(student => {
+    const attendanceRecord = attendanceRecords.find(r => r.studentId === student.id);
+    const studentStatus = attendanceRecord ? attendanceRecord.status : 'Not Marked';
+    
+    if (status === 'all') return true;
+    return studentStatus === status;
+  });
+
+  // إظهار النتائج
+  if (filteredStudents.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-gray-500 py-4">
+          No students found with status: ${status}
+        </td>
+      </tr>
+    `;
+    document.getElementById('visible-students-count').textContent = '0';
+    return;
+  }
+
+  // عرض الطلاب المفلترين
+  filteredStudents.forEach(student => {
+    const attendanceRecord = attendanceRecords.find(r => r.studentId === student.id);
+    const studentStatus = attendanceRecord ? attendanceRecord.status : 'Not Marked';
+    const isToday = isCurrentDate(today);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="px-6 py-4">${student.name || 'Unknown Name'}</td>
+      <td class="px-6 py-4">${student.grade || 'Unknown Grade'}</td>
+      <td class="px-6 py-4 ${studentStatus === 'Present' ? 'text-green-600' : studentStatus === 'Absent' ? 'text-red-600' : 'text-gray-500'}">
+        ${studentStatus}
+      </td>
+      <td class="px-6 py-4 flex gap-2">
+        ${isToday ? `
+          <button data-student-id="${student.id}" data-status="Present" onclick="markAttendance('${student.id}', 'Present')" 
+            class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+            Mark Present
+          </button>
+          <button data-student-id="${student.id}" data-status="Absent" onclick="markAttendance('${student.id}', 'Absent')" 
+            class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+            Mark Absent
+          </button>
+        ` : ''}
+        <button onclick="viewStudent('${student.id}')" 
+          class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+          View
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // تحديث العداد وتمييز الزر النشط
+  document.getElementById('visible-students-count').textContent = filteredStudents.length;
+  
+  // تحديث تمييز الأزرار
+  const buttons = {
+    'all': 'show-all',
+    'Present': 'show-present',
+    'Absent': 'show-absent'
+  };
+  
+  Object.keys(buttons).forEach(key => {
+    const btn = document.getElementById(buttons[key]);
+    if (btn) {
+      if (key === status) {
+        btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+      } else {
+        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+      }
+    }
+  });
+
+  // تحديث الإحصائيات
+  updateStats();
+}
+
+// إضافة window.filterByStatus لجعل الدالة متاحة عالمياً
+window.filterByStatus = filterByStatus;
+
+const userRole = localStorage.getItem('userRole');
+function applyRolePermissions() {
+  if (userRole === 'nor' || userRole === 'mid') {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      button[onclick^="deleteStudent"],
+      button[onclick^="editStudent"] {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+document.addEventListener('DOMContentLoaded', applyRolePermissions);
+  </script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Teacher | AL-BIRUNI</title>
+    <link rel="icon" href="images/icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .register-container {
+            background: rgba(255,255,255,0.95);
+            max-width: 370px;
+            margin: 48px auto 0 auto;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(60,64,67,.18), 0 1.5px 8px rgba(33,150,243,0.08);
+            padding: 38px 28px 28px 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        .register-container::before {
+            content: "";
+            position: absolute;
+            top: -60px; left: -60px;
+            width: 160px; height: 160px;
+            background: linear-gradient(135deg, #6366f1 60%, #38bdf8 100%);
+            opacity: 0.13;
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .register-header {
+            text-align: center;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .register-header img {
+            width: 68px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 8px #6366f1aa);
+        }
+        .register-title {
+            color: #2563eb;
+            font-weight: 700;
+            font-size: 1.35em;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .register-desc {
+            color: #64748b;
+            font-size: 15px;
+            margin-bottom: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 500;
+            color: #334155;
+            letter-spacing: 0.1px;
+        }
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 38px;
+            color: #a5b4fc;
+            font-size: 18px;
+            pointer-events: none;
+        }
+        input[type="text"], input[type="password"], input[type="tel"] {
+            width: 100%;
+            padding: 13px 14px 13px 38px;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 7px;
+            font-size: 16px;
+            background: #f1f5f9;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+            outline: none;
+        }
+        select {
+            width: 100%;
+            padding: 13px 14px 13px 38px;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 7px;
+            font-size: 16px;
+            background: #f1f5f9;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+            outline: none;
+            appearance: none;
+        }
+        input:focus, select:focus {
+            border-color: #6366f1;
+            background: #fff;
+            box-shadow: 0 0 0 2px #dbeafe;
+        }
+        .register-btn {
+            background: linear-gradient(90deg, #6366f1 60%, #38bdf8 100%);
+            color: white;
+            padding: 14px 0;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.09);
+            letter-spacing: 0.5px;
+        }
+        .register-btn:hover, .register-btn:focus {
+            background: linear-gradient(90deg, #2563eb 60%, #0ea5e9 100%);
+            box-shadow: 0 4px 16px rgba(99,102,241,0.16);
+            transform: translateY(-2px) scale(1.01);
+        }
+        .register-footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 32px;
+            letter-spacing: 0.2px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: #2563eb;
+            background: #fff;
+            border: 2px solid #6366f1;
+            border-radius: 30px;
+            padding: 8px 24px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 4px #e0e7ff44;
+        }
+        .back-link:hover {
+            background: #6366f1;
+            color: #fff;
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px #6366f1aa;
+        }
+        .error-message {
+            color: #d93025;
+            font-size: 14px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .register-container {
+                max-width: 98vw;
+                margin: 18px 1vw 0 1vw;
+                padding: 18px 6px 14px 6px;
+            }
+            .register-header img {
+                width: 52px;
+            }
+            .register-title {
+                font-size: 1.08em;
+            }
+            .register-btn {
+                font-size: 15px;
+                padding: 11px 0;
+            }
+            .back-link {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            .register-footer {
+                font-size: 12px;
+            }
+        }
+    </style>
+    <!-- أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <img src="images/icon.png" alt="Al-Biruni Logo">
+            <div class="register-title">Register Teacher</div>
+            <div class="register-desc">Please fill in the details to register as a new teacher.</div>
+        </div>
+        <form id="registerForm" autocomplete="off">
+            <div class="form-group">
+                <label for="teacherName">Name</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="input-icon" style="left:6px;top:70%;transform:translateY(-50%);"><i class="fa fa-user"></i></span>
+                    <select id="teacherGender" name="teacherGender" required style="width: 40%; padding-left: 12px; margin-left: 26px;">
+                        <option value="">Title</option>
+                        <option value="Mr.">Mr.</option>
+                        <option value="Ms.">Ms.</option>
+                    </select>
+                    <input type="text" id="teacherName" name="teacherName" required placeholder="Full Name" style="width: 60%; margin-left: 8px;" pattern="^[A-Za-z\s]+$" autocomplete="off" maxlength="40">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="teacherPhone">Phone Number</label>
+                <span class="input-icon"><i class="fa fa-phone"></i></span>
+                <input type="tel" id="teacherPhone" name="teacherPhone" required placeholder="03XXXXXXXXX" pattern="^03[0-9]{9}$" maxlength="11" inputmode="numeric" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="teacherSubject">Subject</label>
+                <span class="input-icon"><i class="fa fa-book"></i></span>
+                <select id="teacherSubject" name="teacherSubject" required>
+                    <option value="">Select Subject</option>
+                    <option value="Math">Math</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Biology">Biology</option>
+                    <option value="English">English</option>
+                    <option value="Arabic">Arabic</option>
+                    <option value="Islamic">Islamic</option>
+                    <option value="Computer">Computer</option>
+                    <option value="Social">Social</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="teacherPassword">Password</label>
+                <span class="input-icon"><i class="fa fa-lock"></i></span>
+                <input type="password" id="teacherPassword" name="teacherPassword" required placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label for="teacherSecret">Confirm You Are a Teacher</label>
+                <span class="input-icon"><i class="fa fa-key"></i></span>
+                <input type="password" id="teacherSecret" name="teacherSecret" required placeholder="Enter secret code">
+            </div>
+            <div class="error-message" id="registerError">Please fill all fields correctly.</div>
+            <button type="submit" class="register-btn">
+                <i class="fa fa-user-plus" style="margin-right:8px"></i>
+                Register
+            </button>
+        </form>
+        <!-- مسافة بين زر ريجيستر والأزرار السفلية -->
+        <div style="height: 18px;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="/login" class="back-link">
+                &#8592; Back to Login
+            </a>
+            <a href="https://al-biruni.web.app/" class="back-link">
+                Back to Main <span style="margin-left:6px;"><i class="fa fa-home"></i></span>
+            </a>
+        </div>
+    </div>
+    <div class="register-footer">
+        &copy; 2025 Al-Biruni. All rights reserved.
+    </div>
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCE-N0QQmjLie60yBSRe7rl6ulfb7YbwqU",
+          authDomain: "al-biruni.firebaseapp.com",
+          projectId: "al-biruni",
+          storageBucket: "al-biruni.appspot.com",
+          messagingSenderId: "77152769570",
+          appId: "1:77152769570:web:83b8de7bd64856d7f51c7b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // منع إدخال غير الأرقام في رقم الجوال
+        document.getElementById('teacherPhone').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // منع إدخال غير الحروف والمسافة في الاسم
+        document.getElementById('teacherName').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var gender = document.getElementById('teacherGender').value;
+            var name = document.getElementById('teacherName').value.trim();
+            var phone = document.getElementById('teacherPhone').value.trim();
+            var subject = document.getElementById('teacherSubject').value;
+            var password = document.getElementById('teacherPassword').value;
+            var secret = document.getElementById('teacherSecret').value.trim();
+            var error = document.getElementById('registerError');
+            // تحقق من الرمز السري
+            if (!secret) {
+                error.textContent = "Secret code is required.";
+                error.style.display = 'block';
+                return;
+            }
+            // تحقق من رقم الجوال الباكستاني
+            if (!/^03[0-9]{9}$/.test(phone)) {
+                error.textContent = "Please enter a valid Pakistani phone number (e.g. 03XXXXXXXXX).";
+                error.style.display = 'block';
+                return;
+            }
+            if (!/^[A-Za-z\s]+$/.test(name)) {
+                error.textContent = "Name must contain letters only.";
+                error.style.display = 'block';
+                return;
+            }
+            if (!gender || !name || !phone || !subject || !password) {
+                error.textContent = "Please fill all fields correctly.";
+                error.style.display = 'block';
+                return;
+            }
+            error.style.display = 'none';
+
+            // تحقق من التكرار في الاسم أو الرقم
+            try {
+                // تحقق من الاسم
+                let snapshot = await db.collection('teachers').where('name', '==', name).get();
+                if (!snapshot.empty) {
+                    error.textContent = "Name is already taken.";
+                    error.style.display = 'block';
+                    return;
+                }
+                // تحقق من الرقم
+                snapshot = await db.collection('teachers').where('phone', '==', phone).get();
+                if (!snapshot.empty) {
+                    error.textContent = "Phone number is already taken.";
+                    error.style.display = 'block';
+                    return;
+                }
+            } catch (err) {
+                error.textContent = "Error checking name or phone. Try again.";
+                error.style.display = 'block';
+                return;
+            }
+
+            // تحقق من الرمز السري في قاعدة البيانات
+            let userRole = null;
+            try {
+                const secretSnap = await db.collection('secrets').where('type', '==', 'teacher').where('value', '==', secret).get();
+                if (secretSnap.empty) {
+                    error.textContent = "Secret code is incorrect.";
+                    error.style.display = 'block';
+                    return;
+                } else {
+                    userRole = secretSnap.docs[0].data().role || 'nor';
+                }
+            } catch (err) {
+                error.textContent = "Error checking secret code. Try again.";
+                error.style.display = 'block';
+                return;
+            }
+
+            // بيانات المعلم
+            const teacherData = {
+                title: gender,
+                name: name,
+                phone: phone,
+                subject: subject,
+                password: password,
+                role: userRole // حفظ الصلاحية مع بيانات المعلم
+            };
+
+            try {
+                // حفظ في Firestore
+                await db.collection('teachers').add(teacherData);
+                // حفظ في localStorage
+                localStorage.setItem('teacherData', JSON.stringify(teacherData));
+                // الانتقال لصفحة تسجيل الدخول بعد التسجيل
+                window.location.href = "/login";
+            } catch (err) {
+                error.textContent = "Registration failed, please try again.";
+                error.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
