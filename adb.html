@@ -1123,15 +1123,14 @@
         const addForm = document.getElementById('add-student-form');
         if (addForm) addForm.parentElement.style.display = 'none';
       }
-      // إخفاء زر requests لnor وmid (ديسكتوب وموبايل)
+      /
       if (userRole === 'nor' || userRole === 'mid') {
         var reqLink = document.getElementById('requests-link');
         if (reqLink) reqLink.style.display = 'none';
         var reqLinkMobile = document.getElementById('requests-link-mobile');
         if (reqLinkMobile) reqLinkMobile.style.display = 'none';
       }
-      // mid: يمكنه الحذف والإضافة، لكن لا يخفي الأزرار
-      // adi: كل شيء متاح
+      
     }
     document.addEventListener('DOMContentLoaded', applyRolePermissions);
 
@@ -1161,8 +1160,7 @@
         });
       }
     });
-
-    // Show TRC button only for adi
+    
     document.addEventListener('DOMContentLoaded', function() {
       var userRole = localStorage.getItem('userRole');
       // Desktop nav
