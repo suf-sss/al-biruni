@@ -12,7 +12,26 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <!-- أضف مكتبة SheetJS قبل إغلاق </head> -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- إضافة Font Awesome للأيقونات -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
+    /* حركة انزلاق وتلاشي لقائمة الجوال */
+    #mobile-menu {
+      transition: opacity 0.35s cubic-bezier(.4,0,.2,1), transform 0.35s cubic-bezier(.4,0,.2,1);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-32px);
+    }
+    #mobile-menu.menu-open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    #mobile-menu.menu-closing {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-32px);
+    }
     .access-denied-modal {
       position: fixed;
       inset: 0;
@@ -184,12 +203,25 @@
           <div class="bg-white shadow-lg rounded-b-lg p-6 flex flex-col gap-4 absolute top-0 left-0 w-full">
             <div class="text-xl font-bold text-gray-900 mb-2">AL-BIRUNI Admin Dashboard</div>
             <button id="close-mobile-menu" class="self-end text-gray-500 hover:text-red-500 text-2xl font-bold">&times;</button>
-            <a href="/requests" id="requests-link-mobile" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-center">Requests</a>
-            <a href="/attendance" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-bold text-center">Attendance & Absence</a>
-            <a href="/suggestions" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition font-bold text-center">Suggestions</a>
-            <a href="/chat" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-bold text-center">Chat</a>
+            <a href="/requests" id="requests-link-mobile" class="flex items-center gap-3 text-blue-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition">
+              <i class="fa-solid fa-list-check"></i>
+              Requests
+            </a>
+            <a href="/attendance" class="flex items-center gap-3 text-green-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition">
+              <i class="fa-solid fa-user-check"></i>
+              Attendance & Absence
+            </a>
+            <a href="/suggestions" class="flex items-center gap-3 text-yellow-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition">
+              <i class="fa-solid fa-lightbulb"></i>
+              Suggestions
+            </a>
+            <a href="/chat" class="flex items-center gap-3 text-purple-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition">
+              <i class="fa-solid fa-comments"></i>
+              Chat
+            </a>
             <!-- زر تحكم بمراتب الاساتذة للادمن فقط -->
-            <button id="logout-btn-mobile" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-bold text-center">
+            <button id="logout-btn-mobile" class="flex items-center gap-3 text-red-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition">
+              <i class="fa-solid fa-right-from-bracket"></i>
               Logout
             </button>
           </div>
@@ -1123,7 +1155,7 @@
         const addForm = document.getElementById('add-student-form');
         if (addForm) addForm.parentElement.style.display = 'none';
       }
-      /
+
       if (userRole === 'nor' || userRole === 'mid') {
         var reqLink = document.getElementById('requests-link');
         if (reqLink) reqLink.style.display = 'none';
@@ -1149,14 +1181,24 @@
       var closeBtn = document.getElementById('close-mobile-menu');
       if (hamburger && mobileMenu && closeBtn) {
         hamburger.addEventListener('click', function() {
-          mobileMenu.classList.remove('hidden');
+          mobileMenu.classList.remove('hidden', 'menu-closing');
+          // لإعادة التشغيل إذا كان مغلقاً
+          setTimeout(function() {
+            mobileMenu.classList.add('menu-open');
+          }, 10);
         });
-        closeBtn.addEventListener('click', function() {
-          mobileMenu.classList.add('hidden');
-        });
+        function closeMobileMenu() {
+          mobileMenu.classList.remove('menu-open');
+          mobileMenu.classList.add('menu-closing');
+          setTimeout(function() {
+            mobileMenu.classList.add('hidden');
+            mobileMenu.classList.remove('menu-closing');
+          }, 350);
+        }
+        closeBtn.addEventListener('click', closeMobileMenu);
         // إغلاق القائمة عند الضغط خارجها
         mobileMenu.addEventListener('click', function(e) {
-          if (e.target === mobileMenu) mobileMenu.classList.add('hidden');
+          if (e.target === mobileMenu) closeMobileMenu();
         });
       }
     });
@@ -1172,6 +1214,12 @@
           trcBtn.className = "bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-bold text-center";
           trcBtn.textContent = "TRC";
           navLinks.insertBefore(trcBtn, document.getElementById('logout-btn'));
+          // زر تحضير المعلمين
+          var taBtn = document.createElement('a');
+          taBtn.href = "/Teachers-attendance";
+          taBtn.className = "bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition font-bold text-center";
+          taBtn.textContent = "T-Attendance";
+          navLinks.insertBefore(taBtn, document.getElementById('logout-btn'));
         }
       }
       // Mobile nav
@@ -1179,12 +1227,18 @@
       if (userRole === 'adi' && mobileMenu) {
         var trcBtnMobile = document.createElement('a');
         trcBtnMobile.href = "/teachers-ranks";
-        trcBtnMobile.className = "bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-bold text-center";
-        trcBtnMobile.textContent = "TRC";
+        trcBtnMobile.className = "flex items-center gap-3 text-indigo-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition";
+        trcBtnMobile.innerHTML = '<i class="fa-solid fa-ranking-star"></i> TRC';
         // Insert before logout button in mobile menu
         var logoutBtnMobile = document.getElementById('logout-btn-mobile');
         if (logoutBtnMobile) {
           logoutBtnMobile.parentNode.insertBefore(trcBtnMobile, logoutBtnMobile);
+          // زر تحضير المعلمين للجوال
+          var taBtnMobile = document.createElement('a');
+          taBtnMobile.href = "/Teachers-attendance";
+          taBtnMobile.className = "flex items-center gap-3 text-pink-700 px-4 py-2 rounded-lg font-bold text-center bg-transparent hover:bg-gray-100 transition";
+          taBtnMobile.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Teachers Attendance';
+          logoutBtnMobile.parentNode.insertBefore(taBtnMobile, logoutBtnMobile);
         }
       }
       // Logout button logic (desktop)
